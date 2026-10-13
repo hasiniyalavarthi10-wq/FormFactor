@@ -92,13 +92,14 @@ function startSet() {
 
   let secondsLeft = COUNTDOWN_SECONDS;
   showCountdown(String(secondsLeft));
-  showStatus("Get into position...");
+  showStatus("Get into position... recording starts in " + secondsLeft);
 
   // Every 1000 ms (1 second), count down by one
   countdownTimer = setInterval(function () {
     secondsLeft = secondsLeft - 1;
     if (secondsLeft > 0) {
       showCountdown(String(secondsLeft));
+      showStatus("Get into position... recording starts in " + secondsLeft);
     } else {
       clearInterval(countdownTimer);
       countdownTimer = null;
