@@ -40,20 +40,25 @@ const LIVE_SMOOTH_FRAMES = 5;
 
 // Words shown for the overall result and the muscle pattern
 const OVERALL_TEXT = {
-  safe: "Green: good form in this set",
-  warning: "Yellow: some things to work on",
-  danger: "Red: risky movement found"
+  safe: "Good form",
+  warning: "Pretty good, a few things to watch",
+  danger: "Careful: risky movement spotted"
+};
+const BACK_TEXT = {
+  safe: "Low strain",
+  warning: "Some strain",
+  danger: "High strain"
 };
 // Names and plain-English explanations for the trunk-vs-shin categories (Straub & Powers, 2024)
 const BIAS_NAME = {
-  "hip-biased": "Hip-biased",
-  "balanced": "Approximately balanced",
-  "knee-biased": "Knee-biased"
+  "hip-biased": "More hips",
+  "balanced": "Even",
+  "knee-biased": "More knees"
 };
 const BIAS_TEXT = {
-  "hip-biased": "Your trunk leaned more than your shin. This is associated with relatively greater demand on the hip extensors (glutes and hamstrings).",
-  "balanced": "Your trunk and shin leaned about the same amount. The demands on your hip and knee extensors are more similar.",
-  "knee-biased": "Your shin leaned more than your trunk. This is associated with relatively greater demand on the knee extensors (quadriceps)."
+  "hip-biased": "<strong>Your hips did more of the work.</strong> You leaned your chest forward more than your shins, so your glutes and hamstrings worked harder.",
+  "balanced": "<strong>Your hips and knees shared the work evenly.</strong> Your chest and shins leaned about the same.",
+  "knee-biased": "<strong>Your knees did more of the work.</strong> Your shins leaned forward more than your chest, so your quads (front of thighs) worked harder."
 };
 
 // ---- Page elements ----
@@ -652,22 +657,23 @@ function showResults() {
     worstFrameButton.textContent = "Show worst moment (" + formatTime(recordedFrames[worstIndex].time) + ")";
   }
 
-  // Trunk vs. shin comparison (the muscle-emphasis panel)
-  html = html + "<h3>Trunk vs. shin</h3>" + biasHtml(lift);
+  // Which muscles worked more (trunk vs. shin)
+  html = html + "<h3>Which muscles worked more?</h3>" + biasHtml(lift);
 
-  // Lower-back load
-  html = html + "<h3>Lower-back load</h3>" +
-    "<p><span class='dot " + lowerBackLoad(recordedFrames) + "'></span> <strong>" +
-    lowerBackLoad(recordedFrames) + "</strong> (based on how fast your trunk angle changed)</p>";
+  // Lower back
+  const back = lowerBackLoad(recordedFrames);
+  html = html + "<h3>Lower back</h3>" +
+    "<p><span class='dot " + back + "'></span> <strong>" + BACK_TEXT[back] + "</strong>" +
+    " <span class='muted'>(from how fast your chest moved)</span></p>";
 
   if (lift === "squat") {
-    html = html + "<h3>Rep by rep (compared to rep 1)</h3>" + repTableHtml();
+    html = html + "<h3>Rep by rep</h3>" + repTableHtml();
   }
 
   html = html +
-    "<p class='muted'><span class='dot safe'></span> safe &nbsp; <span class='dot warning'></span> warning &nbsp; " +
-    "<span class='dot danger'></span> danger. This is an angular risk estimate based on published " +
-    "biomechanics research, not a medical or force measurement.</p>";
+    "<p class='muted'><span class='dot safe'></span> good &nbsp; <span class='dot warning'></span> watch this &nbsp; " +
+    "<span class='dot danger'></span> careful. An estimate from your body angles, based on published research. " +
+    "Not medical advice.</p>";
 
   resultsBox.innerHTML = html;
 
@@ -680,22 +686,18 @@ function showResults() {
 // Makes the trunk-vs-shin panel: the category, what it means, and a chart
 function biasHtml(lift) {
   if (lift !== "squat") {
-    return "<p class='muted'>The trunk-vs-shin categories come from squat research, so they are only shown for squats.</p>";
+    return "<p class='muted'>Only shown for squats.</p>";
   }
   if (isNaN(setDifference)) {
-    return "<p class='muted'>No squat reps found, so there is nothing to compare yet.</p>";
+    return "<p class='muted'>No squat reps found.</p>";
   }
 
   const bias = movementBias(setDifference);
-  return "<p><strong>" + BIAS_NAME[bias] + "</strong>: at the bottom of your reps, trunk minus shin was " +
-    "<strong>" + formatSigned(setDifference) + "</strong> on average.</p>" +
-    "<p>" + BIAS_TEXT[bias] + "</p>" +
+  return "<p>" + BIAS_TEXT[bias] + "</p>" +
     "<canvas id='bias-chart' class='chart' width='600' height='220'></canvas>" +
-    "<p class='muted'>The chart shows trunk minus shin over the whole set: down into each rep, " +
-    "the bottom (dots), and back up. The gray band is the balanced zone (within " +
-    THRESHOLDS.biasMargin + "°). Categories from Straub &amp; Powers (2024), A Biomechanical Review of " +
-    "the Squat Exercise. This describes how the work is shared between hips and knees. It is not an " +
-    "injury risk or a form failure.</p>";
+    "<p class='muted'>How it changed during your set. Dots = bottom of each rep. " +
+    "Gray = even. (Chest lean minus shin lean: " + formatSigned(setDifference) + " on average. " +
+    "Based on Straub &amp; Powers, 2024. This is not a sign of injury.)</p>";
 }
 
 // Draws a line chart of trunk-minus-shin over time, with the balanced zone shaded
@@ -733,9 +735,9 @@ function drawBiasChart() {
   // Labels for the three zones
   pen.fillStyle = "#5b6475";
   pen.font = "12px sans-serif";
-  pen.fillText("Hip-biased", 54, 20);
-  pen.fillText("Balanced", 54, chart.height / 2 + 4);
-  pen.fillText("Knee-biased", 54, chart.height - 10);
+  pen.fillText("More hips", 54, 20);
+  pen.fillText("Even", 54, chart.height / 2 + 4);
+  pen.fillText("More knees", 54, chart.height - 10);
   pen.fillText("+" + maxDegrees + "°", 4, 14);
   pen.fillText("0°", 4, chart.height / 2 + 4);
   pen.fillText("-" + maxDegrees + "°", 4, chart.height - 4);
@@ -784,38 +786,50 @@ function repTableHtml() {
   }
 
   let html = "<div class='table-wrap'><table class='rep-table'>" +
-    "<tr><th>Rep</th><th>Time</th><th>Depth</th><th>vs. rep 1</th><th>Trunk − Shin</th><th>vs. rep 1</th></tr>";
+    "<tr><th>Rep</th><th>How deep</th><th>vs. 1st rep</th><th>Muscles</th></tr>";
 
   for (let i = 0; i < repResults.length; i++) {
     const rep = repResults[i];
+
+    // Depth compared to the first rep, in words
     let depthChangeText = "—";
-    let patternChangeText = "—";
     if (i > 0) {
-      depthChangeText = changeCell(rep.depthChange, isLessDeep(rep));
-      patternChangeText = changeCell(rep.patternChange, isPatternShift(rep));
+      depthChangeText = depthChangeWords(rep.depthChange);
+      if (isLessDeep(rep)) {
+        depthChangeText = "<span class='dot warning'></span> " + depthChangeText;
+      }
     }
+
+    // Which muscles worked more, with a yellow dot if it changed a lot from the first rep
+    let musclesText = BIAS_NAME[rep.bias] || "--";
+    if (i > 0 && isPatternShift(rep)) {
+      musclesText = "<span class='dot warning'></span> " + musclesText;
+    }
+
     html = html + "<tr>" +
       "<td>" + (i + 1) + "</td>" +
-      "<td>" + formatTime(rep.time) + "</td>" +
       "<td>" + formatSigned(rep.depth) + "</td>" +
       "<td>" + depthChangeText + "</td>" +
-      "<td>" + formatSigned(rep.difference) + "<br><span class='muted'>" + (BIAS_NAME[rep.bias] || "--") + "</span></td>" +
-      "<td>" + patternChangeText + "</td>" +
+      "<td>" + musclesText + "</td>" +
       "</tr>";
   }
 
   html = html + "</table></div>" +
-    "<p class='muted'>Depth is your thigh angle at the bottom of the rep: 0° = thigh level (parallel), " +
-    "+ = hip below knee, − = hip above knee. Each rep is compared to your first rep, so the app can spot " +
-    "changes during the set (like getting less deep as you tire) without needing to know your depth goal. " +
-    "(The depth goal you pick is only used for live feedback while you squat.) A yellow dot means the change was more than " + THRESHOLDS.depthChangeWarning + "°.</p>";
+    "<p class='muted'>How deep: 0° = thighs level with the floor, + = deeper, − = higher. " +
+    "Each rep is compared to your first one. Yellow dot = big change.</p>";
   return html;
 }
 
-// Makes one "vs. rep 1" cell: the signed change, with a yellow dot if it's a big change
-function changeCell(change, isBig) {
-  if (isBig) {
-    return "<span class='dot warning'></span> " + formatSigned(change);
+// Turns a depth change into words, like "5° shallower", "3° deeper", or "same"
+function depthChangeWords(change) {
+  if (isNaN(change)) {
+    return "--";
   }
-  return formatSigned(change);
+  if (Math.abs(change) < 2) {
+    return "same";
+  }
+  if (change < 0) {
+    return Math.round(-change) + "° shallower";
+  }
+  return Math.round(change) + "° deeper";
 }

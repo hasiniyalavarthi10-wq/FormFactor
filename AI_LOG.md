@@ -156,3 +156,11 @@ Legend:
   showing current depth, which turns green with a check mark when the goal is reached.
 - **Values:** `parallelThighAngle: 0` (thigh level, the standard definition of parallel);
   `deepThighAngle: 15` is a starting estimate. TODO (me): check against research.
+
+## Change — Simpler, shorter results wording (my request)
+- **My decision:** the analysis should be easy for teens to understand: concise, plain language, less jargon.
+- **Claude Code wrote:** rewrote the results text: overall result ("Good form" / "Pretty good, a few things
+  to watch" / "Careful: risky movement spotted"), each flag as a time + what happened + a simple tip,
+  "Which muscles worked more?" (More hips / Even / More knees), "Lower back: Low / Some / High strain",
+  and a simpler rep table (How deep, vs. 1st rep in words, Muscles). The methodology page keeps the
+  technical terms for judges.

@@ -264,16 +264,15 @@ function buildFlags(frames, lift, repResults) {
     }
   }
   if (fastest !== -1 && frames[fastest].trunkSpeed > THRESHOLDS.trunkDropWarning) {
-    flags.push("Trunk leaned forward quickly at " + formatTime(frames[fastest].time) +
-      " (about " + Math.round(frames[fastest].trunkSpeed) + "° per second), which increases load on the lower back.");
+    flags.push("<strong>" + formatTime(frames[fastest].time) + "</strong>: Your chest dropped forward fast. " +
+      "This strains your lower back. Try to keep your chest steady.");
   }
 
   // 2. Shear force warning: hips rising before the chest
   for (let i = 0; i < frames.length; i++) {
     if (frames[i].level !== "unknown" && isShearPattern(frames[i])) {
-      flags.push("Shear force warning at " + formatTime(frames[i].time) +
-        ": your knees straightened while your chest was still dropping forward (hips rose first). " +
-        "This shifts load from your legs to your lower back.");
+      flags.push("<strong>" + formatTime(frames[i].time) + "</strong>: Your hips rose before your chest. " +
+        "This moves the work from your legs to your lower back. Try to rise with chest and hips together.");
       break;  // only report the first time
     }
   }
@@ -290,9 +289,8 @@ function buildFlags(frames, lift, repResults) {
       }
     }
     if (mostLean !== -1 && frames[mostLean].trunkLean > THRESHOLDS.trunkLeanWarning) {
-      flags.push("At " + formatTime(frames[mostLean].time) + " your trunk leaned about " +
-        Math.round(frames[mostLean].trunkLean) + "° forward (more than " + THRESHOLDS.trunkLeanWarning + "°). " +
-        "Some lean is normal and depends on your leg length, but more lean puts more load on the lower back.");
+      flags.push("<strong>" + formatTime(frames[mostLean].time) + "</strong>: You leaned forward a lot (" +
+        Math.round(frames[mostLean].trunkLean) + "°). Some lean is normal, but less is easier on your back.");
     }
   }
 
@@ -300,16 +298,14 @@ function buildFlags(frames, lift, repResults) {
   for (let i = 1; i < repResults.length; i++) {
     const rep = repResults[i];
     if (isLessDeep(rep)) {
-      flags.push("Rep " + (i + 1) + " (at " + formatTime(rep.time) + ") was about " +
-        Math.round(-rep.depthChange) + "° less deep than rep 1. Depth dropping during a set can be a sign of fatigue.");
+      flags.push("<strong>Rep " + (i + 1) + "</strong>: Shallower than your first rep. You may be getting tired.");
     }
     if (isPatternShift(rep)) {
       let leanWord = "more";
       if (rep.patternChange < 0) {
         leanWord = "less";
       }
-      flags.push("In rep " + (i + 1) + " your trunk leaned about " + Math.round(Math.abs(rep.patternChange)) +
-        "° " + leanWord + " compared to your shin than in rep 1, so the work shifted between hips and knees.");
+      flags.push("<strong>Rep " + (i + 1) + "</strong>: You leaned forward " + leanWord + " than in your first rep.");
     }
   }
 
@@ -321,12 +317,12 @@ function buildFlags(frames, lift, repResults) {
     }
   }
   if (unknownCount > frames.length * 0.3) {
-    flags.push("Your body was hard to see in " + Math.round(100 * unknownCount / frames.length) +
-      "% of frames, so these results are less reliable. Try better lighting and keep your whole body in view.");
+    flags.push("We couldn't see you clearly in " + Math.round(100 * unknownCount / frames.length) +
+      "% of the video, so results may be off. Try brighter light and keep your whole body in view.");
   }
 
   if (flags.length === 0) {
-    flags.push("No warning signs found in this set. Nice work!");
+    flags.push("No problems found. Nice work!");
   }
   return flags;
 }
