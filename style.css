@@ -1,0 +1,155 @@
+/* FormFactor - style.css
+   Simple, mobile-friendly styles shared by every page. */
+
+/* Colors used across the site, defined once so they're easy to change */
+:root {
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --text: #1d2330;
+  --muted: #5b6475;
+  --accent: #2364d2;
+  --border: #dde1e8;
+  --safe: #1e8e3e;
+  --warning: #c98a00;
+  --danger: #c5221f;
+}
+
+/* Basic page setup */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Keeps content a readable width, with 16px padding on phones */
+.container {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Top navigation bar */
+nav {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+
+nav .container {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+nav .logo {
+  font-weight: 700;
+  margin-right: auto;
+  color: var(--text);
+  text-decoration: none;
+}
+
+nav a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* White boxes that group related content */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+h1 {
+  font-size: 1.8rem;
+  margin: 8px 0;
+}
+
+h2 {
+  font-size: 1.25rem;
+  margin-top: 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* Buttons and button-style links */
+.button {
+  display: inline-block;
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 1rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:disabled {
+  background: #9aa3b2;
+  cursor: not-allowed;
+}
+
+/* Form controls on the tool page */
+label {
+  display: block;
+  font-weight: 600;
+  margin: 12px 0 4px;
+}
+
+select,
+input[type="file"] {
+  font-size: 1rem;
+  max-width: 100%;
+}
+
+/* Video player: never wider than the screen */
+.video-box {
+  position: relative;
+  width: 100%;
+}
+
+.video-box video {
+  width: 100%;
+  display: block;
+  border-radius: 8px;
+  background: #000000;
+}
+
+/* Yellow disclaimer box */
+.disclaimer {
+  background: #fff8e1;
+  border: 1px solid #f0d58a;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+}
+
+/* Small status message under the controls */
+.status {
+  margin-top: 12px;
+  color: var(--muted);
+}
+
+/* Hides an element until JavaScript shows it */
+.hidden {
+  display: none;
+}
+
+footer {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 24px 16px;
+}

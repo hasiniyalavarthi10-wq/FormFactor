@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FormFactor — Analyze</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <a class="logo" href="index.html">FormFactor</a>
+      <a href="app.html">Analyze</a>
+      <a href="methodology.html">Methodology</a>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <h1>Analyze your lift</h1>
+
+    <div class="disclaimer">
+      <strong>Not medical advice.</strong> Results are an angular risk estimate
+      based on published biomechanics research, not a force or medical
+      measurement. Best accuracy: side view, whole body in frame, good lighting.
+      Your video never leaves this device.
+    </div>
+
+    <!-- Step 1: choose the video and the lift type -->
+    <div class="card">
+      <label for="video-upload">1. Choose a side-view video</label>
+      <input type="file" id="video-upload" accept="video/*">
+
+      <label for="lift-type">2. Which lift is it?</label>
+      <select id="lift-type">
+        <option value="squat">Squat</option>
+        <option value="deadlift">Deadlift</option>
+      </select>
+
+      <p>
+        <button class="button" id="analyze-button" disabled>Analyze</button>
+      </p>
+      <p class="status" id="status">No video chosen yet.</p>
+    </div>
+
+    <!-- Step 2: the video player (hidden until a video is loaded) -->
+    <div class="card hidden" id="video-card">
+      <div class="video-box">
+        <video id="video" controls playsinline muted></video>
+      </div>
+    </div>
+
+    <!-- Step 3: results (filled in later by app.js) -->
+    <div class="card hidden" id="results-card">
+      <h2>Results</h2>
+      <div id="results"></div>
+    </div>
+
+  </main>
+
+  <footer>
+    FormFactor — <a href="methodology.html">How it works</a>
+  </footer>
+
+  <!-- type="module" lets app.js import MediaPipe from a CDN in the next step -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
