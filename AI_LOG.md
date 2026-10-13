@@ -148,3 +148,11 @@ Legend:
   moment / Record another set buttons.
 - **Claude Code wrote:** the fix: the whole left column (playback + buttons) now stays on screen
   together, using a `sticky` class instead of making only the video sticky.
+
+## Change — Depth goal is back, for live feedback only (my decision)
+- **My decision:** bring back the Parallel / Deep option, but keep it out of the results analysis
+  (which compares each rep to rep 1).
+- **Claude Code wrote:** the dropdown (squats only) and `drawDepthBar`: a live bar at the top of the camera
+  showing current depth, which turns green with a check mark when the goal is reached.
+- **Values:** `parallelThighAngle: 0` (thigh level, the standard definition of parallel);
+  `deepThighAngle: 15` is a starting estimate. TODO (me): check against research.

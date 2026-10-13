@@ -59,6 +59,8 @@ const BIAS_TEXT = {
 // ---- Page elements ----
 const startCameraButton = document.getElementById("start-camera-button");
 const liftSelect = document.getElementById("lift-type");
+const depthChoice = document.getElementById("depth-choice");
+const depthSelect = document.getElementById("depth-goal");
 const setLengthSelect = document.getElementById("set-length");
 const startSetButton = document.getElementById("start-set-button");
 const stopSetButton = document.getElementById("stop-set-button");
@@ -92,6 +94,7 @@ let worstIndex = -1;         // frame number of the worst moment (-1 = none)
 let setDifference = NaN;     // average trunk-minus-shin angle at the bottom of the squat reps
 let liveTrunk = [];          // the last few live trunk angles, for smoothing
 let liveShin = [];           // the last few live shin angles, for smoothing
+let liveDepth = [];          // the last few live thigh angles (depth), for smoothing
 
 startCameraButton.addEventListener("click", startCamera);
 startSetButton.addEventListener("click", startSet);
@@ -100,6 +103,16 @@ analyzeButton.addEventListener("click", openResults);
 replayButton.addEventListener("click", replay);
 worstFrameButton.addEventListener("click", showWorstFrame);
 recordAgainButton.addEventListener("click", backToRecording);
+liftSelect.addEventListener("change", showDepthChoice);
+
+// Shows the depth-goal dropdown only when Squat is selected
+function showDepthChoice() {
+  if (liftSelect.value === "squat") {
+    depthChoice.classList.remove("hidden");
+  } else {
+    depthChoice.classList.add("hidden");
+  }
+}
 
 // Shows a message under the buttons
 function showStatus(message) {
@@ -173,6 +186,12 @@ function processFrame() {
       const trunk = smoothLive(liveTrunk, trunkLeanAngle(joints.shoulder, joints.hip));
       const shin = smoothLive(liveShin, shinAngle(joints.knee, joints.ankle));
       drawFigureStyle(draw, joints, trunk, shin, NO_LEVEL_COLOR);
+
+      // Squats: live depth bar at the top, based on the depth goal
+      if (liftSelect.value === "squat") {
+        const depth = smoothLive(liveDepth, thighAngle(joints.hip, joints.knee));
+        drawDepthBar(draw, depth);
+      }
       if (isRecording) {
         saveFrame(joints, now);
       }
@@ -270,6 +289,37 @@ function drawFigureStyle(canvas, joints, trunk, shin, color) {
   canvas.textAlign = "center";  // the middle stays visible even when the picture is cropped
   canvas.fillText("Trunk − Shin = " + formatSigned(difference), width / 2, height - size * 1.6);
   canvas.fillText(category, width / 2, height - size * 0.4);
+  canvas.textAlign = "left";
+}
+
+// Draws a bar at the top of the live camera showing current squat depth vs. the depth goal.
+// Green with a check mark when the goal is reached.
+// depth = thigh angle in degrees (0 = thigh level, positive = hip below knee)
+function drawDepthBar(canvas, depth) {
+  if (isNaN(depth)) {
+    return;
+  }
+  let goal = THRESHOLDS.parallelThighAngle;
+  let goalName = "Parallel";
+  if (depthSelect.value === "deep") {
+    goal = THRESHOLDS.deepThighAngle;
+    goalName = "Deep";
+  }
+
+  const size = textSize();
+  const width = canvas.canvas.width;
+  let text = "Depth " + formatSigned(depth) + "  (goal: " + goalName + ")";
+  canvas.fillStyle = "rgba(0, 0, 0, 0.6)";
+  if (depth >= goal) {
+    text = "✓ " + goalName + " reached (" + formatSigned(depth) + ")";
+    canvas.fillStyle = "rgba(0, 160, 70, 0.85)";
+  }
+
+  canvas.fillRect(0, 0, width, size * 1.7);
+  canvas.fillStyle = "#ffffff";
+  canvas.font = "bold " + size + "px sans-serif";
+  canvas.textAlign = "center";
+  canvas.fillText(text, width / 2, size * 1.2);
   canvas.textAlign = "left";
 }
 
@@ -758,7 +808,7 @@ function repTableHtml() {
     "<p class='muted'>Depth is your thigh angle at the bottom of the rep: 0° = thigh level (parallel), " +
     "+ = hip below knee, − = hip above knee. Each rep is compared to your first rep, so the app can spot " +
     "changes during the set (like getting less deep as you tire) without needing to know your depth goal. " +
-    "A yellow dot means the change was more than " + THRESHOLDS.depthChangeWarning + "°.</p>";
+    "(The depth goal you pick is only used for live feedback while you squat.) A yellow dot means the change was more than " + THRESHOLDS.depthChangeWarning + "°.</p>";
   return html;
 }
 

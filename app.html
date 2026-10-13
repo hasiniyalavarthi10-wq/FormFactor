@@ -44,6 +44,15 @@
             <option value="deadlift">Deadlift</option>
           </select>
 
+          <!-- Only shown for squats. Used for live feedback on the camera, not in the results. -->
+          <div id="depth-choice">
+            <label for="depth-goal">Depth goal (live feedback)</label>
+            <select id="depth-goal">
+              <option value="parallel">Parallel (thigh level)</option>
+              <option value="deep">Deep (hip below knee)</option>
+            </select>
+          </div>
+
           <label for="set-length">3. How long to record?</label>
           <select id="set-length">
             <option value="10">10 seconds</option>

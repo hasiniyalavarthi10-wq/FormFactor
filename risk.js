@@ -28,6 +28,11 @@ const THRESHOLDS = {
   repStartKneeAngle: 140,       // knee bends past this = a rep has started
   repEndKneeAngle: 160,         // knee straightens past this = back to standing
 
+  // Depth goals for the LIVE feedback only (thigh angle in degrees: 0 = thigh level).
+  // Parallel = thigh level is the standard definition. The "deep" number is a STARTING ESTIMATE.
+  parallelThighAngle: 0,
+  deepThighAngle: 15,
+
   // STARTING ESTIMATES: comparing each rep to the first rep (degrees)
   depthChangeWarning: 10,       // a rep this much less deep than rep 1 = warning
   patternChangeWarning: 10,     // trunk-minus-shin this much different from rep 1 = warning
