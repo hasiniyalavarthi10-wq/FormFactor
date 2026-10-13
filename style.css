@@ -118,9 +118,11 @@ input[type="file"] {
   max-width: 1200px;
 }
 
-/* Phones: one column (controls, then camera) */
+/* Phones: one column (controls, then camera).
+   "minmax(0, 1fr)" stops anything from making the column wider than the screen. */
 .app-layout {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
@@ -143,23 +145,30 @@ input[type="file"] {
     position: sticky;
     top: 16px;
   }
+
+  /* On computers the camera box is sized by the screen's HEIGHT, so it fits on screen */
+  .app-layout .video-box {
+    width: auto;
+    height: 85vh;
+  }
+
+  /* On the results screen the playback is a bit shorter, so its buttons fit on screen */
+  .results-layout .video-box {
+    height: 72vh;
+  }
 }
 
-/* Tall camera box shaped like a standing person (3 wide by 4 tall) */
+/* Tall camera box shaped like a standing person (3 wide by 4 tall).
+   On phones it is as wide as the screen (so the page never scrolls sideways). */
 .video-box {
   position: relative;
-  height: 85vh;            /* 85% of the screen's height */
+  width: 100%;
   aspect-ratio: 3 / 4;
   max-width: 100%;
   margin: 0 auto;
   background: #000000;
   border-radius: 10px;
   overflow: hidden;
-}
-
-/* On the results screen the playback is a bit shorter, so its buttons fit on screen */
-.results-layout .video-box {
-  height: 72vh;
 }
 
 /* The video and the skeleton layer sit exactly on top of each other.
@@ -319,4 +328,10 @@ footer {
   font-size: 0.9rem;
   text-align: center;
   padding: 24px 16px;
+}
+
+/* Anything sliding in from the side (like the results) is cut off at the screen edge,
+   so phones never scroll sideways */
+main {
+  overflow-x: clip;
 }

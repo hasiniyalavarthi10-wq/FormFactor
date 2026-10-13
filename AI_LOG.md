@@ -173,3 +173,11 @@ Legend:
   could otherwise look like a fast forward lean); a 5-minute safety limit; smaller playback pictures
   (360 px wide) so 5 minutes fits in memory; faster smoothing so long recordings analyze quickly
   (a 5-minute test set analyzed in about 0.35 s); a guard so "Show worst moment" can't crash.
+
+## Design pass tried, then undone (my decision)
+- **What happened:** Claude Code made a polished redesign (new home page, logo, styled buttons).
+  I decided it didn't look like something a high schooler would build, so I asked to go back to the
+  simpler original design. The redesign was undone with `git revert` (it's still visible in git history).
+- **Kept from it (Claude Code):** two phone-layout bug fixes that also affected the original design:
+  the Analyze page no longer scrolls sideways on phones, and the results no longer poke past the
+  screen edge while sliding in.
