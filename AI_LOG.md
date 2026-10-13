@@ -118,3 +118,11 @@ Legend:
   used a made-up 15° margin); angle smoothing over 0.2 s; the comparison box at the top of playback;
   the trunk-minus-shin chart; per-rep categories; methodology page update.
 - **Research-backed value:** `biasMargin: 10` (Straub & Powers, 2024).
+
+## Validation + figure-style live view (my request)
+- **My idea:** check the app against Figure 5 of Straub & Powers (2024), and make the live video
+  show angles the way that figure does.
+- **Claude Code did:** ran the app's pose detection and angle code on the figure's 3 photos (all 3
+  categories matched; angles within 1–4°), wrote `VALIDATION.md`, and wrote `drawFigureStyle`:
+  trunk and shin lines, vertical reference lines, angle numbers, and "Trunk − Shin" with the category,
+  used for both the live view and playback.
