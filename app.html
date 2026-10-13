@@ -25,8 +25,9 @@
       The camera video is processed inside your browser and never leaves this device.
     </div>
 
-    <!-- Two columns on a computer: controls on the left, camera on the right -->
-    <div class="app-layout">
+    <!-- ===== RECORDING SCREEN =====
+         Two columns on a computer: controls on the left, camera on the right -->
+    <div class="app-layout" id="record-view">
 
       <!-- LEFT COLUMN -->
       <div>
@@ -80,12 +81,6 @@
             <li>Use bright, even lighting. Avoid a bright window behind you.</li>
           </ul>
         </div>
-
-        <!-- Results (filled in later by app.js) -->
-        <div class="card hidden" id="results-card">
-          <h2>Results</h2>
-          <div id="results"></div>
-        </div>
       </div>
 
       <!-- RIGHT COLUMN: the camera (black until it's turned on) -->
@@ -93,9 +88,32 @@
         <video id="video" playsinline muted></video>
         <!-- The skeleton is drawn on this transparent canvas, on top of the video -->
         <canvas id="overlay"></canvas>
-        <!-- Playback of the recorded set covers the live camera while it plays -->
-        <canvas id="playback" class="hidden"></canvas>
         <div class="countdown hidden" id="countdown"></div>
+      </div>
+
+    </div>
+
+    <!-- ===== RESULTS SCREEN (shown after clicking Analyze) =====
+         Two columns on a computer: playback on the left, analysis on the right -->
+    <div class="app-layout results-layout hidden" id="results-view">
+
+      <!-- LEFT COLUMN: playback of the recorded set -->
+      <div>
+        <div class="video-box">
+          <canvas id="playback"></canvas>
+        </div>
+        <p class="playback-buttons">
+          <button class="button" id="replay-button">Replay</button>
+          <button class="button" id="worst-frame-button">Show worst moment</button>
+          <button class="button" id="record-again-button">Record another set</button>
+        </p>
+        <p class="status" id="playback-status"></p>
+      </div>
+
+      <!-- RIGHT COLUMN: the analysis (slides in) -->
+      <div class="card slide-in" id="results-card">
+        <h1>Results</h1>
+        <div id="results"></div>
       </div>
 
     </div>

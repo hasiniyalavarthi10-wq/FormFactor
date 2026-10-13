@@ -72,7 +72,12 @@ const draw = overlay.getContext("2d");
 const playback = document.getElementById("playback");
 const playbackDraw = playback.getContext("2d");
 const countdownText = document.getElementById("countdown");
-const resultsCard = document.getElementById("results-card");
+const recordView = document.getElementById("record-view");
+const resultsView = document.getElementById("results-view");
+const replayButton = document.getElementById("replay-button");
+const worstFrameButton = document.getElementById("worst-frame-button");
+const recordAgainButton = document.getElementById("record-again-button");
+const playbackStatus = document.getElementById("playback-status");
 const resultsBox = document.getElementById("results");
 
 // ---- Things we remember while the page runs ----
@@ -93,7 +98,10 @@ let liveShin = [];           // the last few live shin angles, for smoothing
 startCameraButton.addEventListener("click", startCamera);
 startSetButton.addEventListener("click", startSet);
 stopSetButton.addEventListener("click", stopSet);
-analyzeButton.addEventListener("click", startPlayback);
+analyzeButton.addEventListener("click", openResults);
+replayButton.addEventListener("click", replay);
+worstFrameButton.addEventListener("click", showWorstFrame);
+recordAgainButton.addEventListener("click", backToRecording);
 liftSelect.addEventListener("change", showDepthChoice);
 
 // Shows the depth dropdown only when Squat is selected
@@ -338,11 +346,9 @@ function takePicture() {
 
 // "Start set" clicked: count down, then start recording
 function startSet() {
-  stopPlayback();
   startSetButton.disabled = true;
   stopSetButton.disabled = false;
   analyzeButton.disabled = true;
-  resultsCard.classList.add("hidden");
 
   let secondsLeft = COUNTDOWN_SECONDS;
   showCountdown(String(secondsLeft));
@@ -483,20 +489,41 @@ function frameBefore(index, seconds) {
 
 // ======== PLAYBACK ========
 
-// "Analyze" clicked: analyze the set, then play it back from the start
-function startPlayback() {
-  stopPlayback();
+// "Analyze" clicked: analyze the set, switch to the results screen, and play it back
+function openResults() {
   analyzeSet();
-  playback.classList.remove("hidden");
+  recordView.classList.add("hidden");
+  resultsView.classList.remove("hidden");  // showing it again also replays the slide-in
+  window.scrollTo(0, 0);
   showResults();
+  replay();
+}
+
+// "Record another set" clicked: stop playback and go back to the recording screen
+function backToRecording() {
+  clearTimeout(playbackTimer);
+  resultsView.classList.add("hidden");
+  recordView.classList.remove("hidden");
+  window.scrollTo(0, 0);
+  showStatus("Ready. Click Start set to record another set.");
+}
+
+// Plays the recorded set from the beginning
+function replay() {
+  clearTimeout(playbackTimer);
   playFrame(0);
+}
+
+// Shows a message under the playback
+function showPlaybackStatus(message) {
+  playbackStatus.textContent = message;
 }
 
 // Shows one frame, then waits the real time gap before showing the next one
 function playFrame(index) {
   const frame = recordedFrames[index];
   drawPlaybackFrame(frame);
-  showStatus("Playback: " + frame.time.toFixed(1) + " seconds");
+  showPlaybackStatus("Playback: " + formatTime(frame.time));
 
   if (index + 1 < recordedFrames.length) {
     const waitMs = (recordedFrames[index + 1].time - frame.time) * 1000;
@@ -504,14 +531,8 @@ function playFrame(index) {
       playFrame(index + 1);
     }, waitMs);
   } else {
-    showStatus("Playback finished. Click Analyze to watch again, or Start set to record a new set.");
+    showPlaybackStatus("Playback finished.");
   }
-}
-
-// Stops playback and goes back to the live camera
-function stopPlayback() {
-  clearTimeout(playbackTimer);
-  playback.classList.add("hidden");
 }
 
 // Draws one saved frame: the picture, colored lines, and angle labels
@@ -566,10 +587,8 @@ function drawLabel(canvas, point, text) {
 
 // ======== RESULTS ========
 
-// Fills the Results box: overall result, flags, muscle emphasis, depth, and worst frame
+// Fills the Results box: overall result, flags, trunk vs. shin, lower back, and depth
 function showResults() {
-  resultsCard.classList.remove("hidden");
-
   const lift = liftSelect.value;
   const overall = overallLevel(recordedFrames, repResults);
   const flags = buildFlags(recordedFrames, lift, depthSelect.value, repResults);
@@ -584,10 +603,13 @@ function showResults() {
   }
   html = html + "</ul>";
 
-  // Button to jump to the worst frame
-  if (worstIndex !== -1) {
-    html = html + "<p><button class='button' id='worst-frame-button'>Show worst moment (" +
-      formatTime(recordedFrames[worstIndex].time) + ")</button></p>";
+  // The "Show worst moment" button under the playback only works if there is a worst moment
+  if (worstIndex === -1) {
+    worstFrameButton.disabled = true;
+    worstFrameButton.textContent = "No worst moment";
+  } else {
+    worstFrameButton.disabled = false;
+    worstFrameButton.textContent = "Show worst moment (" + formatTime(recordedFrames[worstIndex].time) + ")";
   }
 
   // Trunk vs. shin comparison (the muscle-emphasis panel)
@@ -609,10 +631,7 @@ function showResults() {
 
   resultsBox.innerHTML = html;
 
-  // The button and chart only exist after the HTML above is added, so connect them now
-  if (worstIndex !== -1) {
-    document.getElementById("worst-frame-button").addEventListener("click", showWorstFrame);
-  }
+  // The chart only exists after the HTML above is added, so draw it now
   if (lift === "squat" && !isNaN(setDifference)) {
     drawBiasChart();
   }
@@ -713,10 +732,9 @@ function drawBiasChart() {
 // Stops playback and shows the single worst frame
 function showWorstFrame() {
   clearTimeout(playbackTimer);
-  playback.classList.remove("hidden");
   drawPlaybackFrame(recordedFrames[worstIndex]);
-  showStatus("Showing the worst moment, at " + formatTime(recordedFrames[worstIndex].time) +
-    ". Click Analyze to play the whole set again.");
+  showPlaybackStatus("Showing the worst moment, at " + formatTime(recordedFrames[worstIndex].time) +
+    ". Click Replay to play the whole set again.");
 }
 
 // Makes the list of reps, like "Rep 1 at 0:02: reached your depth goal"

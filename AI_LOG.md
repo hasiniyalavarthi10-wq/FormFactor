@@ -126,3 +126,11 @@ Legend:
   categories matched; angles within 1–4°), wrote `VALIDATION.md`, and wrote `drawFigureStyle`:
   trunk and shin lines, vertical reference lines, angle numbers, and "Trunk − Shin" with the category,
   used for both the live view and playback.
+
+## Change — Separate results screen (my design)
+- **My idea:** clicking Analyze should take you to a results screen where the playback plays on one
+  side and the analysis pops up on the other.
+- **Claude Code wrote:** a results screen inside app.html (playback on the left, analysis sliding in on
+  the right), with Replay, Show worst moment, and Record another set buttons; the camera stays on screen
+  while scrolling. It is a second screen in the same page, not a separate HTML file, so the recorded
+  pictures never have to be saved anywhere.

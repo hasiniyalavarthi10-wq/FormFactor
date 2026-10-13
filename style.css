@@ -130,18 +130,35 @@ input[type="file"] {
     grid-template-columns: 1fr auto;
     align-items: start;
   }
+
+  /* Results screen: playback on the LEFT, analysis on the right */
+  .app-layout.results-layout {
+    grid-template-columns: auto 1fr;
+  }
+
+  /* The camera stays on screen while you scroll down to read the results.
+     (".app-layout .video-box" is more specific than ".video-box", so it wins.) */
+  .app-layout .video-box {
+    position: sticky;
+    top: 16px;
+  }
 }
 
 /* Tall camera box shaped like a standing person (3 wide by 4 tall) */
 .video-box {
   position: relative;
-  height: 80vh;            /* 80% of the screen's height */
+  height: 85vh;            /* 85% of the screen's height */
   aspect-ratio: 3 / 4;
   max-width: 100%;
   margin: 0 auto;
   background: #000000;
   border-radius: 10px;
   overflow: hidden;
+}
+
+/* On the results screen the playback is a bit shorter, so its buttons fit on screen */
+.results-layout .video-box {
+  height: 72vh;
 }
 
 /* The video and the skeleton layer sit exactly on top of each other.
@@ -190,6 +207,30 @@ input[type="file"] {
 /* List of plain-English flags */
 .flags li {
   margin-bottom: 8px;
+}
+
+/* The analysis slides in from the right when the results screen opens */
+.slide-in {
+  animation: slide-in 0.5s ease-out;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Buttons under the playback, with space between them */
+.playback-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
 }
 
 /* Trunk-vs-shin chart in the results */
