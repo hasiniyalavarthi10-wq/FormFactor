@@ -1,32 +1,28 @@
 // FormFactor - app.js
-// Runs the tool page: turns on the webcam, finds the body with MediaPipe,
-// draws a skeleton live, and saves each frame's joint positions during a set.
+// Turns on the webcam, finds the body with MediaPipe, draws a skeleton live,
+// and saves each frame's joint positions while a set is being recorded.
 
 // MediaPipe pose detection, loaded from a CDN (version pinned so it can't change on us)
 import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
 
-// Where MediaPipe's engine files and the pose model live
 const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
 const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
 
-// How many seconds the countdown lasts before recording starts
 const COUNTDOWN_SECONDS = 5;
 
-// MediaPipe numbers 33 body points. These are the ones we use for each side.
+// MediaPipe numbers 33 body points. These are the four we analyze on each side.
 const LEFT_SIDE = { shoulder: 11, hip: 23, knee: 25, ankle: 27 };
 const RIGHT_SIDE = { shoulder: 12, hip: 24, knee: 26, ankle: 28 };
 
-// Pairs of body points to connect with lines for the full-body skeleton (display only)
+// Pairs of body points to connect for the full-body skeleton (display only)
 const FULL_BODY_LINES = [
-  [11, 12],                     // shoulder to shoulder
-  [23, 24],                     // hip to hip
-  [11, 13], [13, 15],           // left arm: shoulder, elbow, wrist
-  [12, 14], [14, 16],           // right arm
-  [11, 23], [23, 25], [25, 27], // left side: shoulder, hip, knee, ankle
-  [12, 24], [24, 26], [26, 28]  // right side
+  [11, 12], [23, 24],                       // shoulders, hips
+  [11, 13], [13, 15], [12, 14], [14, 16],   // arms
+  [11, 23], [23, 25], [25, 27],             // left side
+  [12, 24], [24, 26], [26, 28]              // right side
 ];
 
-// ---- Page elements we need ----
+// ---- Page elements ----
 const startCameraButton = document.getElementById("start-camera-button");
 const liftSelect = document.getElementById("lift-type");
 const setLengthSelect = document.getElementById("set-length");
@@ -36,26 +32,20 @@ const statusText = document.getElementById("status");
 const videoCard = document.getElementById("video-card");
 const video = document.getElementById("video");
 const overlay = document.getElementById("overlay");
-const overlayContext = overlay.getContext("2d");
+const draw = overlay.getContext("2d");
 const countdownText = document.getElementById("countdown");
 const resultsCard = document.getElementById("results-card");
 const resultsBox = document.getElementById("results");
 
-// A hidden canvas used to make small snapshot pictures of frames
-const snapshotCanvas = document.createElement("canvas");
-const snapshotContext = snapshotCanvas.getContext("2d");
-
-// ---- Things we need to remember while the page runs ----
-let poseLandmarker = null;   // the MediaPipe pose detector, once loaded
-let lastVideoTime = -1;      // so we only analyze each camera frame once
-let countdownTimer = null;   // the repeating 1-second countdown timer
-let stopTimer = null;        // the timer that ends the set automatically
-let isRecording = false;     // true only while a set is being recorded
+// ---- Things we remember while the page runs ----
+let poseLandmarker = null;   // the MediaPipe pose detector
+let lastVideoTime = -1;      // so we analyze each camera frame only once
+let countdownTimer = null;   // the 1-second countdown timer
+let stopTimer = null;        // the timer that ends the set
+let isRecording = false;     // true while a set is being recorded
 let recordingStartTime = 0;  // when recording began, in milliseconds
-let recordedFrames = [];     // one entry per frame where a body was found
-let framesSeen = 0;          // all frames during recording, even with no body found
+let recordedFrames = [];     // saved data, one entry per frame
 
-// ---- Connect buttons to our functions ----
 startCameraButton.addEventListener("click", startCamera);
 startSetButton.addEventListener("click", startSet);
 stopSetButton.addEventListener("click", stopSet);
@@ -65,7 +55,7 @@ function showStatus(message) {
   statusText.textContent = message;
 }
 
-// Shows big text (like "3" or "GO") on top of the video, or hides it if text is empty
+// Shows a big number on the video, or hides it when given ""
 function showCountdown(text) {
   countdownText.textContent = text;
   if (text === "") {
@@ -75,130 +65,83 @@ function showCountdown(text) {
   }
 }
 
-// ======================================================
-// CAMERA + MODEL SETUP
-// ======================================================
+// ======== CAMERA + MODEL ========
 
-// Turns on the webcam, then loads the pose model and starts the frame loop
+// Turns on the webcam, loads the pose model, and starts the frame loop
 async function startCamera() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    showStatus("This browser can't use the camera here. Use Chrome, Edge, or Safari, on https or localhost.");
-    return;
-  }
-
-  showStatus("Asking for camera permission...");
-
   try {
-    // Ask for video only (no microphone). "ideal" means: use this size if the camera supports it.
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: false
-    });
-    video.srcObject = stream;
+    showStatus("Turning on camera...");
+    video.srcObject = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
     await video.play();
   } catch (error) {
-    showCameraError(error);
+    if (error.name === "NotAllowedError") {
+      showStatus("Camera permission was blocked. Click the camera icon in the address bar, allow it, and try again.");
+    } else {
+      showStatus("Couldn't start the camera: " + error.message);
+    }
     return;
   }
 
-  // Make the drawing canvas the same size (in pixels) as the camera image
+  // Make the drawing layer the same pixel size as the camera image
   overlay.width = video.videoWidth;
   overlay.height = video.videoHeight;
-
   videoCard.classList.remove("hidden");
   startCameraButton.disabled = true;
 
-  try {
-    await loadPoseModel();
-  } catch (error) {
-    console.error(error);
-    showStatus("Couldn't load the pose model. Check your internet connection and reload the page.");
-    return;
-  }
+  showStatus("Loading the pose model (can take about 10 seconds)...");
+  const vision = await FilesetResolver.forVisionTasks(WASM_URL);
+  poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+    baseOptions: { modelAssetPath: MODEL_URL, delegate: "CPU" },
+    runningMode: "VIDEO",  // we give it frames one after another
+    numPoses: 1            // only look for one person
+  });
 
   startSetButton.disabled = false;
-  showStatus("Ready. Step back until the skeleton covers your shoulder, hip, knee, and ankle, then click Start set.");
+  showStatus("Ready. Stand sideways with your whole body in view, then click Start set.");
   requestAnimationFrame(processFrame);
 }
 
-// Turns a camera error into a message a user can act on
-function showCameraError(error) {
-  if (error.name === "NotAllowedError") {
-    showStatus("Camera permission was blocked. Click the camera icon in the address bar, allow it, and try again.");
-  } else if (error.name === "NotFoundError") {
-    showStatus("No camera was found on this device.");
-  } else if (error.name === "NotReadableError") {
-    showStatus("The camera is being used by another app (like Zoom). Close it and try again.");
-  } else {
-    showStatus("Couldn't start the camera: " + error.message);
-  }
-}
+// ======== FRAME LOOP ========
 
-// Downloads MediaPipe's engine and the pose model (runs once)
-async function loadPoseModel() {
-  showStatus("Loading the pose model (the first time can take about 10 seconds)...");
-  const vision = await FilesetResolver.forVisionTasks(WASM_URL);
-
-  // Try the graphics card (fast). If this computer can't, use the regular processor.
-  try {
-    poseLandmarker = await createPoseLandmarker(vision, "GPU");
-  } catch (error) {
-    console.warn("GPU not available, using CPU instead.", error);
-    poseLandmarker = await createPoseLandmarker(vision, "CPU");
-  }
-}
-
-// Creates the pose detector with our settings
-function createPoseLandmarker(vision, processor) {
-  return PoseLandmarker.createFromOptions(vision, {
-    baseOptions: { modelAssetPath: MODEL_URL, delegate: processor },
-    runningMode: "VIDEO",  // we give it frames one after another, like a video
-    numPoses: 1            // only look for one person
-  });
-}
-
-// ======================================================
-// FRAME LOOP: runs every time the screen refreshes
-// ======================================================
-
-// Finds the body in the current camera frame, draws it, and saves it if recording
+// Runs on every screen refresh: find the body, draw it, save it if recording
 function processFrame() {
-  // Only analyze a frame once (the screen can refresh faster than the camera)
   if (video.currentTime !== lastVideoTime) {
     lastVideoTime = video.currentTime;
     const now = performance.now();
     const result = poseLandmarker.detectForVideo(video, now);
 
-    overlayContext.clearRect(0, 0, overlay.width, overlay.height);
+    draw.clearRect(0, 0, overlay.width, overlay.height);
 
-    if (isRecording) {
-      framesSeen = framesSeen + 1;
-    }
-
-    // result.landmarks is a list of people found; we asked for at most 1
     if (result.landmarks.length > 0) {
-      const joints = getBestSideJoints(result.landmarks[0]);
-      drawFullBody(result.landmarks[0]);
-      drawSkeleton(joints);
+      const landmarks = result.landmarks[0];
+      const joints = getBestSideJoints(landmarks);
+      drawFullBody(landmarks);
+      drawSide(joints);
       if (isRecording) {
         saveFrame(joints, now);
       }
     }
   }
-
-  // Ask the browser to run this function again on the next screen refresh
   requestAnimationFrame(processFrame);
 }
 
-// Adds up how visible (0 to 1) the four joints on one side are
-function sideVisibility(landmarks, side) {
-  return landmarks[side.shoulder].visibility
-       + landmarks[side.hip].visibility
-       + landmarks[side.knee].visibility
-       + landmarks[side.ankle].visibility;
+// MediaPipe gives x and y from 0 to 1. This turns them into pixel positions.
+// (Needed so angles come out right, since the image is wider than it is tall.)
+function toPixels(point) {
+  return {
+    x: point.x * video.videoWidth,
+    y: point.y * video.videoHeight,
+    visibility: point.visibility
+  };
 }
 
-// Picks the side of the body facing the camera and returns its four joints in pixels
+// Adds up how visible (0 to 1 each) one side's four joints are
+function sideVisibility(landmarks, side) {
+  return landmarks[side.shoulder].visibility + landmarks[side.hip].visibility
+       + landmarks[side.knee].visibility + landmarks[side.ankle].visibility;
+}
+
+// Picks the side facing the camera and returns its four joints in pixels
 function getBestSideJoints(landmarks) {
   let side = LEFT_SIDE;
   let sideName = "left";
@@ -206,7 +149,6 @@ function getBestSideJoints(landmarks) {
     side = RIGHT_SIDE;
     sideName = "right";
   }
-
   return {
     side: sideName,
     shoulder: toPixels(landmarks[side.shoulder]),
@@ -216,53 +158,33 @@ function getBestSideJoints(landmarks) {
   };
 }
 
-// MediaPipe gives x and y from 0 to 1. This converts them to real pixel positions.
-// (Important: without this, angles would be wrong because width and height differ.)
-function toPixels(landmark) {
-  return {
-    x: landmark.x * video.videoWidth,
-    y: landmark.y * video.videoHeight,
-    visibility: landmark.visibility
-  };
+// Draws one straight line between two points
+function drawLine(start, end, color, width) {
+  draw.strokeStyle = color;
+  draw.lineWidth = width;
+  draw.beginPath();
+  draw.moveTo(start.x, start.y);
+  draw.lineTo(end.x, end.y);
+  draw.stroke();
 }
 
-// Draws a thin, see-through skeleton of the whole body (just for display, not analysis)
+// Draws a thin white skeleton of the whole body (display only)
 function drawFullBody(landmarks) {
-  overlayContext.strokeStyle = "rgba(255, 255, 255, 0.6)";
-  overlayContext.lineWidth = 3;
-
   for (let i = 0; i < FULL_BODY_LINES.length; i++) {
     const start = toPixels(landmarks[FULL_BODY_LINES[i][0]]);
     const end = toPixels(landmarks[FULL_BODY_LINES[i][1]]);
-    overlayContext.beginPath();
-    overlayContext.moveTo(start.x, start.y);
-    overlayContext.lineTo(end.x, end.y);
-    overlayContext.stroke();
+    drawLine(start, end, "rgba(255,255,255,0.6)", 3);
   }
 }
 
-// Draws the analyzed side brightly: shoulder -> hip -> knee -> ankle, plus a dot on each joint
-function drawSkeleton(joints) {
-  const points = [joints.shoulder, joints.hip, joints.knee, joints.ankle];
-
-  overlayContext.strokeStyle = "#00e5ff";
-  overlayContext.lineWidth = 6;
-  overlayContext.beginPath();
-  overlayContext.moveTo(points[0].x, points[0].y);
-  for (let i = 1; i < points.length; i++) {
-    overlayContext.lineTo(points[i].x, points[i].y);
-  }
-  overlayContext.stroke();
-
-  overlayContext.fillStyle = "#ffffff";
-  for (let i = 0; i < points.length; i++) {
-    overlayContext.beginPath();
-    overlayContext.arc(points[i].x, points[i].y, 9, 0, 2 * Math.PI);
-    overlayContext.fill();
-  }
+// Draws the analyzed side in bright blue: shoulder - hip - knee - ankle
+function drawSide(joints) {
+  drawLine(joints.shoulder, joints.hip, "#00e5ff", 6);
+  drawLine(joints.hip, joints.knee, "#00e5ff", 6);
+  drawLine(joints.knee, joints.ankle, "#00e5ff", 6);
 }
 
-// Saves one frame's data: time, side, the four joints, and a small picture
+// Saves one frame: time, side, four joints, and a small picture for the results
 function saveFrame(joints, now) {
   recordedFrames.push({
     time: (now - recordingStartTime) / 1000,  // seconds since recording started
@@ -275,25 +197,23 @@ function saveFrame(joints, now) {
   });
 }
 
-// Makes a small JPEG picture of the video with the skeleton drawn on it
+// Makes a small JPEG picture of the video with the skeleton on top
 function takeSnapshot() {
-  snapshotCanvas.width = 320;
-  snapshotCanvas.height = Math.round(320 * video.videoHeight / video.videoWidth);
-  snapshotContext.drawImage(video, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
-  snapshotContext.drawImage(overlay, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
-  return snapshotCanvas.toDataURL("image/jpeg", 0.7);
+  const picture = document.createElement("canvas");
+  picture.width = 320;
+  picture.height = Math.round(320 * video.videoHeight / video.videoWidth);
+  const pictureDraw = picture.getContext("2d");
+  pictureDraw.drawImage(video, 0, 0, picture.width, picture.height);
+  pictureDraw.drawImage(overlay, 0, 0, picture.width, picture.height);
+  return picture.toDataURL("image/jpeg", 0.7);
 }
 
-// ======================================================
-// SET TIMING: countdown, record, stop
-// ======================================================
+// ======== SET TIMING ========
 
-// Runs when "Start set" is clicked: starts the countdown
+// "Start set" clicked: count down, then start recording
 function startSet() {
   startSetButton.disabled = true;
   stopSetButton.disabled = false;
-  liftSelect.disabled = true;
-  setLengthSelect.disabled = true;
   resultsCard.classList.add("hidden");
 
   let secondsLeft = COUNTDOWN_SECONDS;
@@ -303,87 +223,62 @@ function startSet() {
   // Every 1000 ms (1 second), count down by one
   countdownTimer = setInterval(function () {
     secondsLeft = secondsLeft - 1;
-    if (secondsLeft > 0) {
-      showCountdown(String(secondsLeft));
-      showStatus("Get into position... recording starts in " + secondsLeft);
-    } else {
+    showCountdown(String(secondsLeft));
+    showStatus("Get into position... recording starts in " + secondsLeft);
+    if (secondsLeft === 0) {
       clearInterval(countdownTimer);
-      countdownTimer = null;
       beginRecording();
     }
   }, 1000);
 }
 
-// Starts the recording part of the set and schedules the automatic stop
+// Countdown finished: start saving frames, and stop after the chosen time
 function beginRecording() {
+  showCountdown("");
   recordedFrames = [];
-  framesSeen = 0;
   isRecording = true;
   recordingStartTime = performance.now();
-  showCountdown("GO");
-
-  // Hide "GO" after 1 second so it doesn't cover the lifter
-  setTimeout(function () {
-    if (isRecording) {
-      showCountdown("");
-    }
-  }, 1000);
 
   const setSeconds = Number(setLengthSelect.value);
-  showStatus("Recording a " + liftSelect.value + " for " + setSeconds + " seconds. Lift now!");
-
-  // Stop automatically when the chosen time is up
+  showStatus("Recording " + setSeconds + " seconds. Lift now!");
   stopTimer = setTimeout(stopSet, setSeconds * 1000);
 }
 
-// Ends the set (automatically, or when Stop is clicked) and resets the buttons
+// Ends the set (time's up, or Stop clicked) and resets the buttons
 function stopSet() {
-  // Cancel any timers that are still waiting
   clearInterval(countdownTimer);
   clearTimeout(stopTimer);
-  countdownTimer = null;
-  stopTimer = null;
   showCountdown("");
 
   if (isRecording) {
-    const secondsRecorded = (performance.now() - recordingStartTime) / 1000;
-    showStatus("Set finished: " + secondsRecorded.toFixed(1) + " seconds recorded.");
-    showRecordingSummary(secondsRecorded);
+    isRecording = false;
+    showResults();
   } else {
     showStatus("Countdown cancelled.");
   }
 
-  isRecording = false;
   startSetButton.disabled = false;
   stopSetButton.disabled = true;
-  liftSelect.disabled = false;
-  setLengthSelect.disabled = false;
 }
 
-// ======================================================
-// RESULTS (temporary: step d replaces this with the real analysis)
-// ======================================================
+// ======== RESULTS (temporary: step d replaces this) ========
 
-// Shows how many frames were captured and one sample snapshot
-function showRecordingSummary(secondsRecorded) {
+// Shows how many frames were saved and a picture from the middle of the set
+function showResults() {
+  showStatus("Set finished.");
   resultsCard.classList.remove("hidden");
-
-  // Make the data available in the browser console for testing angles.js later
-  window.recordedFrames = recordedFrames;
-  console.log("Recorded frames:", recordedFrames);
+  window.recordedFrames = recordedFrames;  // lets us look at the data in the console
 
   if (recordedFrames.length === 0) {
-    resultsBox.innerHTML = "<p>No body was found in any frame. Step back so your whole body is in view, and try again.</p>";
+    resultsBox.innerHTML = "<p>No body found. Step back so your whole body is in view and try again.</p>";
     return;
   }
 
-  const framesPerSecond = recordedFrames.length / secondsRecorded;
-  const middleFrame = recordedFrames[Math.floor(recordedFrames.length / 2)];
-
+  const seconds = (performance.now() - recordingStartTime) / 1000;
+  const middle = recordedFrames[Math.floor(recordedFrames.length / 2)];
   resultsBox.innerHTML =
-    "<p>Body found in <strong>" + recordedFrames.length + "</strong> of " + framesSeen + " frames " +
-    "(about " + framesPerSecond.toFixed(1) + " frames per second).</p>" +
-    "<p>Side used in the middle frame: <strong>" + middleFrame.side + "</strong>.</p>" +
-    "<p>Middle frame, at " + middleFrame.time.toFixed(2) + " seconds:</p>" +
-    "<img class='snapshot' src='" + middleFrame.snapshot + "' alt='Snapshot from the middle of the set'>";
+    "<p>Saved <strong>" + recordedFrames.length + "</strong> frames " +
+    "(about " + (recordedFrames.length / seconds).toFixed(1) + " per second). " +
+    "Lift: " + liftSelect.value + ". Side: " + middle.side + ".</p>" +
+    "<img class='snapshot' src='" + middle.snapshot + "' alt='Middle of the set'>";
 }

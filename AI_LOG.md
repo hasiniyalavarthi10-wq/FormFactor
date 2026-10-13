@@ -51,3 +51,9 @@ Legend:
 - **Claude Code wrote:** `drawFullBody` draws a dim full-body skeleton (arms, torso, both legs)
   for display; the analyzed side stays bright blue. Analysis stays side-view only, because
   a front view can't measure knee/trunk bending accurately in 2D.
+
+## Change — Simplified app.js (my request)
+- **My decision:** make the code as simple as possible so a high schooler can read and explain it.
+- **Claude Code wrote:** simplified `app.js`: CPU only (no GPU fallback), 2 camera error
+  messages instead of 4, removed the "GO" timer, the dropdown locking, and the frames-seen
+  counter, added a `drawLine` helper, and used only plain `if/else` and `for` loops.
