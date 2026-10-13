@@ -4,15 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FormFactor — Analyze</title>
-  <link rel="icon" href="logo.svg">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <nav>
     <div class="container">
-      <a class="logo" href="index.html"><img class="logo-mark" src="logo.svg" alt=""> FormFactor</a>
-      <a class="active" href="app.html">Analyze</a>
+      <a class="logo" href="index.html">FormFactor</a>
+      <a href="app.html">Analyze</a>
       <a href="methodology.html">Methodology</a>
     </div>
   </nav>
@@ -20,9 +19,10 @@
   <main class="container wide">
 
     <div class="disclaimer">
-      <strong>Not medical advice.</strong> An estimate from your body angles, based on published
-      research. Best results: side view, whole body in view, good lighting.
-      Your camera video stays on this device.
+      <strong>Not medical advice.</strong> Results are an angular risk estimate
+      based on published biomechanics research, not a force or medical
+      measurement. Best accuracy: side view, whole body in frame, good lighting.
+      The camera video is processed inside your browser and never leaves this device.
     </div>
 
     <!-- ===== RECORDING SCREEN =====
@@ -34,8 +34,9 @@
         <!-- Controls -->
         <div class="card">
           <h1>Analyze your lift</h1>
-
-          <button class="button" id="start-camera-button">1. Turn on camera</button>
+          <p>
+            <button class="button" id="start-camera-button">1. Turn on camera</button>
+          </p>
 
           <label for="lift-type">2. Which lift?</label>
           <select id="lift-type">
@@ -52,12 +53,14 @@
             </select>
           </div>
 
-          <div class="button-row">
+          <p>
             <button class="button" id="start-set-button" disabled>3. Start set</button>
-            <button class="button stop" id="stop-set-button" disabled>Stop</button>
-            <button class="button" id="analyze-button" disabled>4. Analyze</button>
-          </div>
+            <button class="button" id="stop-set-button" disabled>Stop</button>
+          </p>
           <p class="muted">Do as many reps as you want, then click Stop.</p>
+          <p>
+            <button class="button" id="analyze-button" disabled>4. Analyze</button>
+          </p>
           <p class="status" id="status">Camera is off.</p>
         </div>
 
@@ -73,9 +76,8 @@
         </div>
       </div>
 
-      <!-- RIGHT COLUMN: the camera -->
+      <!-- RIGHT COLUMN: the camera (black until it's turned on) -->
       <div class="video-box sticky">
-        <div class="camera-off" id="camera-off">Camera is off.<br>Click "1. Turn on camera" to start.</div>
         <video id="video" playsinline muted></video>
         <!-- The skeleton is drawn on this transparent canvas, on top of the video -->
         <canvas id="overlay"></canvas>
@@ -93,17 +95,17 @@
         <div class="video-box">
           <canvas id="playback"></canvas>
         </div>
-        <div class="playback-buttons">
+        <p class="playback-buttons">
           <button class="button" id="replay-button">Replay</button>
-          <button class="button secondary" id="worst-frame-button">Show worst moment</button>
-          <button class="button secondary" id="record-again-button">Record another set</button>
-        </div>
+          <button class="button" id="worst-frame-button">Show worst moment</button>
+          <button class="button" id="record-again-button">Record another set</button>
+        </p>
         <p class="status" id="playback-status"></p>
       </div>
 
       <!-- RIGHT COLUMN: the analysis (slides in) -->
       <div class="card slide-in" id="results-card">
-        <h1>Your results</h1>
+        <h1>Results</h1>
         <div id="results"></div>
       </div>
 
@@ -112,12 +114,12 @@
   </main>
 
   <footer>
-    FormFactor · <a href="methodology.html">How it works</a>
+    FormFactor — <a href="methodology.html">How it works</a>
   </footer>
 
-  <!-- Angle math. Loaded first so app.js can use its functions. -->
+  <!-- My angle math. Loaded first so app.js can use its functions. -->
   <script src="angles.js"></script>
-  <!-- Risk rules. Also loaded before app.js. -->
+  <!-- My risk logic. Also loaded before app.js. -->
   <script src="risk.js"></script>
   <!-- type="module" lets app.js import MediaPipe from a CDN -->
   <script type="module" src="app.js"></script>

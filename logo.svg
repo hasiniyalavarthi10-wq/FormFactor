@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- FormFactor logo: a vertical line and a leaning line from the same point, like the app's angle lines -->
-  <rect width="32" height="32" rx="7" fill="#0b6fd6"/>
-  <line x1="11" y1="25" x2="11" y2="7" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="11" y1="25" x2="23" y2="9" stroke="#00e5ff" stroke-width="3.5" stroke-linecap="round"/>
-  <circle cx="11" cy="25" r="2.5" fill="#ffffff"/>
-</svg>
