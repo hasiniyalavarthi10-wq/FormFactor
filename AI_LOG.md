@@ -75,3 +75,36 @@ Legend:
   `analyzeSet` (calls my functions for every frame), playback timing, colored lines, angle labels,
   and the color legend. Also the empty `risk.js` stub with a placeholder THRESHOLDS object.
 - **My code that feeds it:** angles from `angles.js` and the color level from `risk.js` (not written yet).
+
+## Change — Squat depth goal instead of one fixed angle (my idea)
+- **My idea:** because good squat form depends on the person, let the user choose a depth goal
+  and flag reps that don't reach it.
+- **Claude Code suggested (I accepted):** missed depth is yellow (warning), not red, because a
+  shallow squat isn't what injures the back; measure depth by comparing hip height to knee height,
+  which works for any body; trunk lean is yellow only; red only for fast trunk-angle changes.
+- **Claude Code wrote:** the depth-goal dropdown and the Depth check list.
+
+## Research → thresholds
+- **I did:** the biomechanics research (PDF: McGill thresholds, neutral spine, trunk angle changes,
+  Assa et al. spinal motion, trunk/hip/knee angular velocity plan, safe trunk angle 15°–45°).
+- **I wrote:** `trunkLeanWarning: 45` in risk.js, from my research.
+- **Claude Code pointed out:** the lumbar flexion numbers (10–22°, 60–65°) measure spine curvature,
+  which one 2D camera can't see, so they belong in the limitations section, not as thresholds.
+
+## Full implementation of angles.js and risk.js (at my request)
+- **My decision:** I asked Claude Code to finish all the code so I could change things later.
+  This changes my original plan, where I was going to write angles.js and risk.js myself.
+- **Claude Code wrote:** all of `angles.js` (distance, calculateAngle with the Law of Cosines,
+  trunkLeanAngle, kneeAngle, angularVelocity) and all logic in `risk.js` (frame risk level,
+  shear-force pattern, rep finding, depth check, overall result, worst frame, muscle emphasis,
+  plain-English flags), plus the results screen in `app.js`. Speed is smoothed over 0.2 seconds.
+- **Numbers that are NOT from research yet:** trunk-drop speeds (60 / 100 °/s), knee-straightening
+  speed, rep-finding knee angles, depth ratios, dominance margin. Claude Code chose these as
+  starting estimates. **TODO (me):** tune them by recording good and bad lifts.
+- **I wrote:** _(fill in what I rewrite or change)_
+
+## Step (e) — Methodology page and README
+- **Claude Code wrote:** `methodology.html` (how it works, rules, muscle emphasis, honest
+  limitations, sources with TODOs for exact citations) and `README.md` (run locally, deploy to
+  GitHub Pages, AI Usage Disclosure draft for me to edit).
+- **I need to:** add exact citations/links from my research; edit the AI disclosure in my own words.

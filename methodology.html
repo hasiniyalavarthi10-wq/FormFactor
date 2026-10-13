@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FormFactor — Methodology</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <a class="logo" href="index.html">FormFactor</a>
+      <a href="app.html">Analyze</a>
+      <a href="methodology.html">Methodology</a>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <h1>How FormFactor works</h1>
+
+    <div class="disclaimer">
+      <strong>Not medical advice.</strong> FormFactor gives an <em>angular risk estimate based on
+      published biomechanics research</em>. It does not measure force, spinal flexion, or injury risk directly.
+    </div>
+
+    <div class="card">
+      <h2>1. Finding the body</h2>
+      <p>
+        FormFactor uses Google's <strong>MediaPipe Pose Landmarker</strong> (the "full" model) to find
+        33 body points in every camera frame. All of this runs inside your browser. The camera video is
+        never uploaded or saved. (The browser downloads the model file from Google once.)
+      </p>
+      <p>
+        From the side, one side of the body is closer to the camera. FormFactor uses whichever side
+        MediaPipe can see more clearly, and tracks four joints on it: <strong>shoulder, hip, knee, and ankle</strong>.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>2. Measuring angles</h2>
+      <ul>
+        <li><strong>Knee angle</strong>: the angle at the knee between hip and ankle (180° = straight leg).</li>
+        <li><strong>Hip angle</strong>: the angle at the hip between shoulder and knee.</li>
+        <li><strong>Trunk lean</strong>: how far the shoulder-to-hip line leans forward from straight up
+            (0° = upright, 90° = flat).</li>
+      </ul>
+      <p>
+        Angles are found with the <strong>Law of Cosines</strong>: the three joints form a triangle,
+        and the angle at the middle joint is
+        <code>arccos((ab² + bc² − ac²) / (2·ab·bc))</code>.
+      </p>
+      <p>
+        <strong>Angular velocity</strong> (how fast an angle changes) is the change in angle divided by
+        the change in time, measured over about 0.2 seconds to smooth out small jitter in the tracking.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>3. Deciding safe, warning, or danger</h2>
+      <p>
+        Research on spine loading (Stuart McGill's work) points to <strong>rounding or sudden changes in
+        back angle under load</strong> as the main hazard: when the chest collapses forward or the hips
+        shoot up out of the bottom of a squat, load moves from the legs to the lower back.
+        So FormFactor's rules are:
+      </p>
+      <ul>
+        <li><span class="dot danger"></span> <strong>Danger</strong>: the trunk tips forward very fast.</li>
+        <li><span class="dot warning"></span> <strong>Shear force warning</strong>: the knees straighten while the chest
+            is still dropping forward (the hips rise first, a "good morning" squat pattern).</li>
+        <li><span class="dot warning"></span> <strong>Warning</strong> (squats only): trunk leans more than 45° forward.
+            Research gives a typical safe range of about 15°–45° off vertical. Because the right amount of lean
+            depends on leg length, this is only a warning.</li>
+        <li><span class="dot warning"></span> <strong>Depth</strong> (squats only): you choose a depth goal. Parallel means
+            the hip reaches knee height; deep means the hip goes below the knee. Comparing the hip and knee
+            to each other works for any body size. Missing depth is a warning, not a danger.</li>
+      </ul>
+      <p>
+        The speed limits are <strong>starting estimates</strong> that I am tuning by recording good and poor
+        lifts and comparing them.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>4. Muscle emphasis</h2>
+      <p>
+        At the deepest point of the lift, FormFactor compares how much the knees bend to how much the hips
+        bend. More knee bend suggests a <strong>quad-dominant</strong> pattern; more hip bend suggests a
+        <strong>posterior-chain-dominant</strong> pattern (glutes, hamstrings, back). This describes the
+        movement pattern only. It does not measure how hard any muscle is working.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Honest limitations</h2>
+      <ul>
+        <li><strong>One 2D camera can't see the lower back's curve.</strong> FormFactor sees a straight line from
+            shoulder to hip. Someone can lean forward with a flat back, or round their back without that line
+            moving much. Studies measure lumbar motion of roughly 10°–22° in squats and deadlifts; FormFactor
+            cannot measure this.</li>
+        <li><strong>No forces.</strong> FormFactor does not know the weight on the bar, so it cannot measure
+            force in Newtons. Results are angle-based estimates only.</li>
+        <li><strong>Camera setup matters.</strong> Best results need a true side view, the whole body in frame,
+            and good lighting. If the body is hard to see, FormFactor says so.</li>
+        <li><strong>Not validated clinically.</strong> FormFactor has not been tested against lab motion-capture
+            equipment.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Sources</h2>
+      <ul>
+        <li>McGill, S. <em>Low Back Disorders: Evidence-Based Prevention and Rehabilitation.</em> Human Kinetics.
+            (Neutral spine, spinal flexion, and shear loading.)</li>
+        <li>Squat biomechanics review on PubMed Central (PMC). <!-- TODO: add exact title, authors, year, and link from my research --></li>
+        <li>Assa and colleagues: study of spinal motion during squats and deadlifts. <!-- TODO: add full citation and link --></li>
+      </ul>
+    </div>
+
+  </main>
+
+  <footer>
+    FormFactor — built for the Congressional App Challenge.
+  </footer>
+
+</body>
+</html>
