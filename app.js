@@ -1,7 +1,7 @@
 // FormFactor - app.js
 // Turns on the webcam, finds the body with MediaPipe, draws a skeleton live,
 // saves each frame while a set is recorded, then plays the set back with
-// angles (from my angles.js) and colors (from my risk.js).
+// angles (from angles.js) and colors and results (from risk.js).
 
 // MediaPipe pose detection, loaded from a CDN (version pinned so it can't change on us)
 import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
@@ -29,11 +29,29 @@ const LEVEL_COLORS = {
   warning: "#ffd600",  // yellow
   danger: "#ff1744"    // red
 };
-const NO_LEVEL_COLOR = "#00e5ff";  // blue, used until risk.js gives a level
+const NO_LEVEL_COLOR = "#00e5ff";  // blue, used when a frame's level is "unknown"
+
+// Speeds are measured over this many seconds, to smooth out wobbly dots
+const SPEED_WINDOW_SECONDS = 0.2;
+
+// Words shown for the overall result and the muscle pattern
+const OVERALL_TEXT = {
+  safe: "Green: good form in this set",
+  warning: "Yellow: some things to work on",
+  danger: "Red: risky movement found"
+};
+const PATTERN_TEXT = {
+  "quad-dominant": "Quad-dominant (knees bend more than hips; front of thighs work harder)",
+  "posterior-chain-dominant": "Posterior-chain-dominant (hips bend more than knees; glutes, hamstrings, and back work harder)",
+  "balanced": "Balanced (hips and knees bend about the same)",
+  "unknown": "Unknown (body not clearly visible)"
+};
 
 // ---- Page elements ----
 const startCameraButton = document.getElementById("start-camera-button");
 const liftSelect = document.getElementById("lift-type");
+const depthChoice = document.getElementById("depth-choice");
+const depthSelect = document.getElementById("depth-goal");
 const setLengthSelect = document.getElementById("set-length");
 const startSetButton = document.getElementById("start-set-button");
 const stopSetButton = document.getElementById("stop-set-button");
@@ -57,11 +75,23 @@ let playbackTimer = null;    // the timer that shows the next playback frame
 let isRecording = false;     // true while a set is being recorded
 let recordingStartTime = 0;  // when recording began, in milliseconds
 let recordedFrames = [];     // saved data, one entry per frame
+let repResults = [];         // one entry per squat rep: when it happened and if it reached depth
+let worstIndex = -1;         // frame number of the worst moment (-1 = none)
 
 startCameraButton.addEventListener("click", startCamera);
 startSetButton.addEventListener("click", startSet);
 stopSetButton.addEventListener("click", stopSet);
 analyzeButton.addEventListener("click", startPlayback);
+liftSelect.addEventListener("change", showDepthChoice);
+
+// Shows the depth dropdown only when Squat is selected
+function showDepthChoice() {
+  if (liftSelect.value === "squat") {
+    depthChoice.classList.remove("hidden");
+  } else {
+    depthChoice.classList.add("hidden");
+  }
+}
 
 // Shows a message under the buttons
 function showStatus(message) {
@@ -286,7 +316,7 @@ function stopSet() {
   showStatus("Set recorded (" + recordedFrames.length + " frames). Click Analyze to watch it back.");
 }
 
-// ======== ANALYSIS (uses MY functions from angles.js and risk.js) ========
+// ======== ANALYSIS (uses the functions in angles.js and risk.js) ========
 
 // Works out the angles, speeds, and risk level for every recorded frame
 function analyzeSet() {
@@ -296,18 +326,36 @@ function analyzeSet() {
     frame.hipAngle = calculateAngle(frame.shoulder, frame.hip, frame.knee);
     frame.trunkLean = trunkLeanAngle(frame.shoulder, frame.hip);
 
-    // Speeds compare this frame to the one before it (the first frame has none)
-    if (i === 0) {
-      frame.trunkSpeed = 0;
-      frame.kneeSpeed = 0;
-    } else {
-      const before = recordedFrames[i - 1];
-      frame.trunkSpeed = angularVelocity(before.trunkLean, frame.trunkLean, before.time, frame.time);
-      frame.kneeSpeed = angularVelocity(before.kneeAngle, frame.kneeAngle, before.time, frame.time);
-    }
+    // Speeds compare this frame to one about 0.2 seconds earlier.
+    // (Comparing to the very last frame is too jumpy: MediaPipe's dots wiggle a little every frame.)
+    const before = recordedFrames[frameBefore(i, SPEED_WINDOW_SECONDS)];
+    frame.trunkSpeed = angularVelocity(before.trunkLean, frame.trunkLean, before.time, frame.time);
+    frame.kneeSpeed = angularVelocity(before.kneeAngle, frame.kneeAngle, before.time, frame.time);
 
     frame.level = frameRiskLevel(frame, liftSelect.value);
   }
+
+  // Squats only: find each rep's bottom, then check if it reached the depth goal
+  repResults = [];
+  if (liftSelect.value === "squat") {
+    const bottoms = findRepBottoms(recordedFrames);
+    for (let i = 0; i < bottoms.length; i++) {
+      const bottomFrame = recordedFrames[bottoms[i]];
+      repResults.push({
+        time: bottomFrame.time,
+        reached: reachedDepth(bottomFrame, depthSelect.value)
+      });
+    }
+  }
+}
+
+// Returns the number of the frame about `seconds` before frame `index` (or frame 0)
+function frameBefore(index, seconds) {
+  let earlier = index;
+  while (earlier > 0 && recordedFrames[index].time - recordedFrames[earlier].time < seconds) {
+    earlier = earlier - 1;
+  }
+  return earlier;
 }
 
 // ======== PLAYBACK ========
@@ -317,7 +365,7 @@ function startPlayback() {
   stopPlayback();
   analyzeSet();
   playback.classList.remove("hidden");
-  showLegend();
+  showResults();
   playFrame(0);
 }
 
@@ -378,12 +426,80 @@ function drawLabel(point, text) {
   playbackDraw.fillText(text, point.x + 18, point.y);
 }
 
-// Shows what each line color means in the Results box
-function showLegend() {
+// ======== RESULTS ========
+
+// Fills the Results box: overall result, flags, muscle emphasis, depth, and worst frame
+function showResults() {
   resultsCard.classList.remove("hidden");
-  resultsBox.innerHTML =
-    "<p><span class='dot safe'></span> Green: safe &nbsp; " +
-    "<span class='dot warning'></span> Yellow: warning &nbsp; " +
-    "<span class='dot danger'></span> Red: danger</p>" +
-    "<p class='muted'>Blue lines or \"--\" mean that part of my analysis code isn't written yet.</p>";
+
+  const lift = liftSelect.value;
+  const overall = overallLevel(recordedFrames, repResults);
+  const flags = buildFlags(recordedFrames, lift, depthSelect.value, repResults);
+  worstIndex = worstFrameIndex(recordedFrames);
+
+  let html = "<div class='overall " + overall + "'>" + OVERALL_TEXT[overall] + "</div>";
+
+  // Plain-English flags
+  html = html + "<ul class='flags'>";
+  for (let i = 0; i < flags.length; i++) {
+    html = html + "<li>" + flags[i] + "</li>";
+  }
+  html = html + "</ul>";
+
+  // Button to jump to the worst frame
+  if (worstIndex !== -1) {
+    html = html + "<p><button class='button' id='worst-frame-button'>Show worst moment (" +
+      formatTime(recordedFrames[worstIndex].time) + ")</button></p>";
+  }
+
+  // Muscle emphasis panel
+  html = html + "<h3>Muscle emphasis</h3>" +
+    "<p>Pattern: <strong>" + PATTERN_TEXT[muscleEmphasis(recordedFrames)] + "</strong></p>" +
+    "<p>Lower-back load: <span class='dot " + lowerBackLoad(recordedFrames) + "'></span> <strong>" +
+    lowerBackLoad(recordedFrames) + "</strong></p>";
+
+  if (lift === "squat") {
+    html = html + "<h3>Depth check</h3>" + depthListHtml();
+  }
+
+  html = html +
+    "<p class='muted'><span class='dot safe'></span> safe &nbsp; <span class='dot warning'></span> warning &nbsp; " +
+    "<span class='dot danger'></span> danger. This is an angular risk estimate based on published " +
+    "biomechanics research, not a medical or force measurement.</p>";
+
+  resultsBox.innerHTML = html;
+
+  // The button only exists after the HTML above is added, so connect it now
+  if (worstIndex !== -1) {
+    document.getElementById("worst-frame-button").addEventListener("click", showWorstFrame);
+  }
+}
+
+// Stops playback and shows the single worst frame
+function showWorstFrame() {
+  clearTimeout(playbackTimer);
+  playback.classList.remove("hidden");
+  drawPlaybackFrame(recordedFrames[worstIndex]);
+  showStatus("Showing the worst moment, at " + formatTime(recordedFrames[worstIndex].time) +
+    ". Click Analyze to play the whole set again.");
+}
+
+// Makes the list of reps, like "Rep 1 at 0:02: reached your depth goal"
+function depthListHtml() {
+  if (repResults.length === 0) {
+    return "<p class='muted'>No reps found. Make sure your knees bend well past standing during each rep.</p>";
+  }
+
+  let html = "<ul>";
+  for (let i = 0; i < repResults.length; i++) {
+    const rep = repResults[i];
+    let message = "--";
+    if (rep.reached === true) {
+      message = "<span class='dot safe'></span> reached your depth goal";
+    } else if (rep.reached === false) {
+      message = "<span class='dot warning'></span> didn't reach your depth goal";
+    }
+    html = html + "<li>Rep " + (i + 1) + " at " + formatTime(rep.time) + ": " + message + "</li>";
+  }
+  return html + "</ul>";
 }
