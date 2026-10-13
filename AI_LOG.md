@@ -164,3 +164,12 @@ Legend:
   "Which muscles worked more?" (More hips / Even / More knees), "Lower back: Low / Some / High strain",
   and a simpler rep table (How deep, vs. 1st rep in words, Muscles). The methodology page keeps the
   technical terms for judges.
+
+## Change — Record until Stop, up to 5 minutes (my idea)
+- **My idea:** instead of a fixed 10–30 second recording, let people record until they click Stop,
+  with a limit of about 5 minutes.
+- **Claude Code wrote:** removed the length dropdown; recording runs until Stop with a live timer;
+  when Stop is clicked the last 2 seconds are cut off (that's the lifter walking over to click, which
+  could otherwise look like a fast forward lean); a 5-minute safety limit; smaller playback pictures
+  (360 px wide) so 5 minutes fits in memory; faster smoothing so long recordings analyze quickly
+  (a 5-minute test set analyzed in about 0.35 s); a guard so "Show worst moment" can't crash.

@@ -8,7 +8,7 @@ Built for the Congressional App Challenge.
 ## What it does
 
 1. Turn on your webcam and stand sideways to it.
-2. Record one set of squats or deadlifts (5-second countdown, then it records for 10–30 seconds).
+2. Click Start set: after a 5-second countdown it records until you click Stop (up to 5 minutes).
 3. Click **Analyze** to watch your set back with your joint angles drawn on it. The lines turn
    green, yellow, or red based on your form.
 4. Get an overall result, plain-English notes with timestamps (like "Trunk leaned forward quickly

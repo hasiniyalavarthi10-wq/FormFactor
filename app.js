@@ -10,6 +10,13 @@ const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/w
 const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
 
 const COUNTDOWN_SECONDS = 5;
+// Recording stops by itself after this long (5 minutes), so the saved pictures can't fill up
+// the browser's memory. Each minute is about 1,800 small pictures (roughly 12-25 MB).
+const MAX_RECORD_SECONDS = 300;
+// Width in pixels of each saved playback picture (smaller = less memory, so longer recordings fit)
+const PICTURE_WIDTH = 360;
+// When Stop is clicked, this many seconds are cut from the end (that's you walking over to click)
+const STOP_TRIM_SECONDS = 2;
 
 // MediaPipe numbers 33 body points. These are the four we analyze on each side.
 const LEFT_SIDE = { shoulder: 11, hip: 23, knee: 25, ankle: 27 };
@@ -66,7 +73,6 @@ const startCameraButton = document.getElementById("start-camera-button");
 const liftSelect = document.getElementById("lift-type");
 const depthChoice = document.getElementById("depth-choice");
 const depthSelect = document.getElementById("depth-goal");
-const setLengthSelect = document.getElementById("set-length");
 const startSetButton = document.getElementById("start-set-button");
 const stopSetButton = document.getElementById("stop-set-button");
 const analyzeButton = document.getElementById("analyze-button");
@@ -89,7 +95,8 @@ const resultsBox = document.getElementById("results");
 let poseLandmarker = null;   // the MediaPipe pose detector
 let lastVideoTime = -1;      // so we analyze each camera frame only once
 let countdownTimer = null;   // the 1-second countdown timer
-let stopTimer = null;        // the timer that ends the set
+let clockTimer = null;       // shows how long we've been recording, every second
+let maxTimer = null;         // ends the set at the time limit
 let playbackTimer = null;    // the timer that shows the next playback frame
 let isRecording = false;     // true while a set is being recorded
 let recordingStartTime = 0;  // when recording began, in milliseconds
@@ -103,7 +110,7 @@ let liveDepth = [];          // the last few live thigh angles (depth), for smoo
 
 startCameraButton.addEventListener("click", startCamera);
 startSetButton.addEventListener("click", startSet);
-stopSetButton.addEventListener("click", stopSet);
+stopSetButton.addEventListener("click", stopClicked);
 analyzeButton.addEventListener("click", openResults);
 replayButton.addEventListener("click", replay);
 worstFrameButton.addEventListener("click", showWorstFrame);
@@ -376,12 +383,12 @@ function saveFrame(joints, now) {
 // Makes a small JPEG picture of the camera image (no skeleton) for playback
 function takePicture() {
   const small = document.createElement("canvas");
-  small.width = 480;
-  small.height = Math.round(480 * video.videoHeight / video.videoWidth);
+  small.width = PICTURE_WIDTH;
+  small.height = Math.round(PICTURE_WIDTH * video.videoHeight / video.videoWidth);
   small.getContext("2d").drawImage(video, 0, 0, small.width, small.height);
 
   const picture = new Image();
-  picture.src = small.toDataURL("image/jpeg", 0.7);
+  picture.src = small.toDataURL("image/jpeg", 0.6);  // 0.6 = JPEG quality (smaller file, still clear)
   return picture;
 }
 
@@ -409,22 +416,39 @@ function startSet() {
   }, 1000);
 }
 
-// Countdown finished: start saving frames, and stop after the chosen time
+// Countdown finished: start saving frames until Stop is clicked (or the time limit)
 function beginRecording() {
   showCountdown("");
   recordedFrames = [];
   isRecording = true;
   recordingStartTime = performance.now();
+  showStatus("Recording 0:00. Lift now! Click Stop when you're done.");
 
-  const setSeconds = Number(setLengthSelect.value);
-  showStatus("Recording " + setSeconds + " seconds. Lift now!");
-  stopTimer = setTimeout(stopSet, setSeconds * 1000);
+  // Every second, show how long we've been recording
+  clockTimer = setInterval(function () {
+    const seconds = (performance.now() - recordingStartTime) / 1000;
+    showStatus("Recording " + formatTime(seconds) + ". Click Stop when you're done.");
+  }, 1000);
+
+  // Safety limit, so a forgotten recording can't fill up the browser's memory
+  maxTimer = setTimeout(stopAtTimeLimit, MAX_RECORD_SECONDS * 1000);
 }
 
-// Ends the set (time's up, or Stop clicked) and resets the buttons
-function stopSet() {
+// Stop clicked: cut off the last couple of seconds (walking over to click Stop), then end the set
+function stopClicked() {
+  stopSet(true);
+}
+
+// The time limit was reached: end the set without cutting anything off
+function stopAtTimeLimit() {
+  stopSet(false);
+}
+
+// Ends the set and resets the buttons. If cutEnd is true, removes the last STOP_TRIM_SECONDS.
+function stopSet(cutEnd) {
   clearInterval(countdownTimer);
-  clearTimeout(stopTimer);
+  clearInterval(clockTimer);
+  clearTimeout(maxTimer);
   showCountdown("");
   startSetButton.disabled = false;
   stopSetButton.disabled = true;
@@ -435,15 +459,30 @@ function stopSet() {
   }
 
   isRecording = false;
+  if (cutEnd) {
+    removeLastSeconds(STOP_TRIM_SECONDS);
+  }
   window.recordedFrames = recordedFrames;  // lets me look at the data in the console
 
   if (recordedFrames.length === 0) {
-    showStatus("No body was found. Step back so your whole body is in view and try again.");
+    showStatus("Nothing to analyze. Make sure your whole body is in view, and record a bit longer.");
     return;
   }
 
   analyzeButton.disabled = false;
-  showStatus("Set recorded (" + recordedFrames.length + " frames). Click Analyze to watch it back.");
+  const seconds = recordedFrames[recordedFrames.length - 1].time;
+  showStatus("Set recorded (" + formatTime(seconds) + "). Click Analyze to see your results.");
+}
+
+// Removes the frames from the last `seconds` of the recording
+function removeLastSeconds(seconds) {
+  if (recordedFrames.length === 0) {
+    return;
+  }
+  const cutoff = recordedFrames[recordedFrames.length - 1].time - seconds;
+  while (recordedFrames.length > 0 && recordedFrames[recordedFrames.length - 1].time > cutoff) {
+    recordedFrames.pop();  // remove the newest frame
+  }
 }
 
 // ======== ANALYSIS (uses the functions in angles.js and risk.js) ========
@@ -508,11 +547,24 @@ function analyzeSet() {
 // within SMOOTH_WINDOW_SECONDS around frame `index`.
 // frames[j][angleName] means "the property called angleName", e.g. frames[j].rawTrunk
 function averageNearby(index, angleName) {
+  const halfWindow = SMOOTH_WINDOW_SECONDS / 2;
+  const centerTime = recordedFrames[index].time;
+
+  // Walk backward, then forward, from this frame until we're more than halfWindow seconds away.
+  // (Only looking at nearby frames keeps this fast, even for long recordings.)
+  let first = index;
+  while (first > 0 && centerTime - recordedFrames[first - 1].time <= halfWindow) {
+    first = first - 1;
+  }
+  let last = index;
+  while (last < recordedFrames.length - 1 && recordedFrames[last + 1].time - centerTime <= halfWindow) {
+    last = last + 1;
+  }
+
   let total = 0;
   let count = 0;
-  for (let j = 0; j < recordedFrames.length; j++) {
-    const gap = Math.abs(recordedFrames[j].time - recordedFrames[index].time);
-    if (gap <= SMOOTH_WINDOW_SECONDS / 2 && !isNaN(recordedFrames[j][angleName])) {
+  for (let j = first; j <= last; j++) {
+    if (!isNaN(recordedFrames[j][angleName])) {
       total = total + recordedFrames[j][angleName];
       count = count + 1;
     }
@@ -773,6 +825,9 @@ function drawBiasChart() {
 
 // Stops playback and shows the single worst frame
 function showWorstFrame() {
+  if (worstIndex === -1 || worstIndex >= recordedFrames.length) {
+    return;  // nothing to show
+  }
   clearTimeout(playbackTimer);
   drawPlaybackFrame(recordedFrames[worstIndex]);
   showPlaybackStatus("Showing the worst moment, at " + formatTime(recordedFrames[worstIndex].time) +
