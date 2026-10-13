@@ -31,3 +31,8 @@ Legend:
   landing-page wording in `index.html`.
 - **I wrote:** _(fill in)_
 - **I changed:** _(fill in)_
+
+## Fix — Countdown visibility (found in my testing)
+- **I found:** while testing, clicking Stop never said "Countdown cancelled" because I
+  couldn't see the countdown numbers (they were on the video, scrolled out of view).
+- **Claude Code wrote:** the fix — the countdown now also shows in the status text next to the buttons.
