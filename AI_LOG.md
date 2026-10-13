@@ -22,3 +22,12 @@ Legend:
   `app.js` (upload + playback only), `style.css`.
 - **I wrote:** _(fill in)_
 - **I changed:** _(fill in)_
+
+## Step (a), revised — Live webcam instead of upload
+- **My decision:** switch from uploading a recorded video to live webcam analysis.
+- **Claude Code wrote:** rewrote `app.html` and `app.js` for the camera: turn on webcam,
+  camera setup tips, lift + set-length choice, 5-second countdown, auto-stop timer,
+  Stop button, camera error messages. Added countdown style to `style.css`. Updated
+  landing-page wording in `index.html`.
+- **I wrote:** _(fill in)_
+- **I changed:** _(fill in)_
