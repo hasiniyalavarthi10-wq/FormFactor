@@ -16,6 +16,16 @@ const COUNTDOWN_SECONDS = 5;
 const LEFT_SIDE = { shoulder: 11, hip: 23, knee: 25, ankle: 27 };
 const RIGHT_SIDE = { shoulder: 12, hip: 24, knee: 26, ankle: 28 };
 
+// Pairs of body points to connect with lines for the full-body skeleton (display only)
+const FULL_BODY_LINES = [
+  [11, 12],                     // shoulder to shoulder
+  [23, 24],                     // hip to hip
+  [11, 13], [13, 15],           // left arm: shoulder, elbow, wrist
+  [12, 14], [14, 16],           // right arm
+  [11, 23], [23, 25], [25, 27], // left side: shoulder, hip, knee, ankle
+  [12, 24], [24, 26], [26, 28]  // right side
+];
+
 // ---- Page elements we need ----
 const startCameraButton = document.getElementById("start-camera-button");
 const liftSelect = document.getElementById("lift-type");
@@ -168,6 +178,7 @@ function processFrame() {
     // result.landmarks is a list of people found; we asked for at most 1
     if (result.landmarks.length > 0) {
       const joints = getBestSideJoints(result.landmarks[0]);
+      drawFullBody(result.landmarks[0]);
       drawSkeleton(joints);
       if (isRecording) {
         saveFrame(joints, now);
@@ -215,7 +226,22 @@ function toPixels(landmark) {
   };
 }
 
-// Draws lines shoulder -> hip -> knee -> ankle, plus a dot on each joint
+// Draws a thin, see-through skeleton of the whole body (just for display, not analysis)
+function drawFullBody(landmarks) {
+  overlayContext.strokeStyle = "rgba(255, 255, 255, 0.6)";
+  overlayContext.lineWidth = 3;
+
+  for (let i = 0; i < FULL_BODY_LINES.length; i++) {
+    const start = toPixels(landmarks[FULL_BODY_LINES[i][0]]);
+    const end = toPixels(landmarks[FULL_BODY_LINES[i][1]]);
+    overlayContext.beginPath();
+    overlayContext.moveTo(start.x, start.y);
+    overlayContext.lineTo(end.x, end.y);
+    overlayContext.stroke();
+  }
+}
+
+// Draws the analyzed side brightly: shoulder -> hip -> knee -> ankle, plus a dot on each joint
 function drawSkeleton(joints) {
   const points = [joints.shoulder, joints.hip, joints.knee, joints.ankle];
 

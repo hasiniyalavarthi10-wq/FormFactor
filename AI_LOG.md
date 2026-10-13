@@ -45,3 +45,9 @@ Legend:
   Added the `<canvas>` overlay in `app.html` and its styles in `style.css`.
 - **I wrote:** _(fill in)_
 - **I changed:** _(fill in)_
+
+## Change — Full-body skeleton (my request)
+- **My decision:** show skeleton lines when facing the front too, not only from the side.
+- **Claude Code wrote:** `drawFullBody` draws a dim full-body skeleton (arms, torso, both legs)
+  for display; the analyzed side stays bright blue. Analysis stays side-view only, because
+  a front view can't measure knee/trunk bending accurately in 2D.
