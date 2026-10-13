@@ -57,3 +57,8 @@ Legend:
 - **Claude Code wrote:** simplified `app.js`: CPU only (no GPU fallback), 2 camera error
   messages instead of 4, removed the "GO" timer, the dropdown locking, and the frames-seen
   counter, added a `drawLine` helper, and used only plain `if/else` and `for` loops.
+
+## Change — Side-by-side layout with tall camera (my request)
+- **My decision:** put the camera beside the controls, in a tall (vertical) shape, so I don't have to scroll.
+- **Claude Code wrote:** two-column layout in `app.html` and `style.css` (CSS grid; stacks into one
+  column on phones), and a 3:4 tall camera box that crops the wide webcam image with `object-fit: cover`.

@@ -113,26 +113,48 @@ input[type="file"] {
   max-width: 100%;
 }
 
-/* Video player: never wider than the screen */
+/* The tool page is wider so two columns fit */
+.container.wide {
+  max-width: 1200px;
+}
+
+/* Phones: one column (controls, then camera) */
+.app-layout {
+  display: grid;
+  gap: 16px;
+}
+
+/* Computers (800px wide or more): controls on the left, camera on the right */
+@media (min-width: 800px) {
+  .app-layout {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+  }
+}
+
+/* Tall camera box shaped like a standing person (3 wide by 4 tall) */
 .video-box {
   position: relative;
-  width: 100%;
-}
-
-.video-box video {
-  width: 100%;
-  display: block;
-  border-radius: 8px;
+  height: 80vh;            /* 80% of the screen's height */
+  aspect-ratio: 3 / 4;
+  max-width: 100%;
+  margin: 0 auto;
   background: #000000;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-/* Transparent drawing layer stretched exactly over the video */
+/* The video and the skeleton layer sit exactly on top of each other.
+   "cover" crops the wide camera image to fill the tall box; because both
+   use the same setting, the skeleton still lines up with the body. */
+.video-box video,
 .video-box canvas {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
 
 /* Snapshot image shown in the results */

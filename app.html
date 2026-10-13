@@ -16,9 +16,7 @@
     </div>
   </nav>
 
-  <main class="container">
-
-    <h1>Analyze your lift</h1>
+  <main class="container wide">
 
     <div class="disclaimer">
       <strong>Not medical advice.</strong> Results are an angular risk estimate
@@ -27,58 +25,65 @@
       The camera video is processed inside your browser and never leaves this device.
     </div>
 
-    <!-- Camera setup tips -->
-    <div class="card">
-      <h2>Set up your camera</h2>
-      <ul>
-        <li>Stand <strong>sideways</strong> to the camera, about 2.5–3 meters (8–10 feet) away.</li>
-        <li>Put the camera at about hip height (a laptop on a chair or box works).</li>
-        <li>Your whole body, head to feet, must stay in the picture the whole set.</li>
-        <li>Use bright, even lighting. Avoid a bright window behind you.</li>
-      </ul>
-    </div>
+    <!-- Two columns on a computer: controls on the left, camera on the right -->
+    <div class="app-layout">
 
-    <!-- Controls -->
-    <div class="card">
-      <p>
-        <button class="button" id="start-camera-button">1. Turn on camera</button>
-      </p>
+      <!-- LEFT COLUMN -->
+      <div>
+        <!-- Controls -->
+        <div class="card">
+          <h1>Analyze your lift</h1>
+          <p>
+            <button class="button" id="start-camera-button">1. Turn on camera</button>
+          </p>
 
-      <label for="lift-type">2. Which lift?</label>
-      <select id="lift-type">
-        <option value="squat">Squat</option>
-        <option value="deadlift">Deadlift</option>
-      </select>
+          <label for="lift-type">2. Which lift?</label>
+          <select id="lift-type">
+            <option value="squat">Squat</option>
+            <option value="deadlift">Deadlift</option>
+          </select>
 
-      <label for="set-length">3. How long to record?</label>
-      <select id="set-length">
-        <option value="10">10 seconds</option>
-        <option value="15" selected>15 seconds</option>
-        <option value="20">20 seconds</option>
-        <option value="30">30 seconds</option>
-      </select>
+          <label for="set-length">3. How long to record?</label>
+          <select id="set-length">
+            <option value="10">10 seconds</option>
+            <option value="15" selected>15 seconds</option>
+            <option value="20">20 seconds</option>
+            <option value="30">30 seconds</option>
+          </select>
 
-      <p>
-        <button class="button" id="start-set-button" disabled>4. Start set</button>
-        <button class="button" id="stop-set-button" disabled>Stop</button>
-      </p>
-      <p class="status" id="status">Camera is off.</p>
-    </div>
+          <p>
+            <button class="button" id="start-set-button" disabled>4. Start set</button>
+            <button class="button" id="stop-set-button" disabled>Stop</button>
+          </p>
+          <p class="status" id="status">Camera is off.</p>
+        </div>
 
-    <!-- Live camera view (hidden until the camera is on) -->
-    <div class="card hidden" id="video-card">
+        <!-- Camera setup tips -->
+        <div class="card">
+          <h2>Set up your camera</h2>
+          <ul>
+            <li>Stand <strong>sideways</strong> to the camera, about 2.5–3 meters (8–10 feet) away.</li>
+            <li>Put the camera at about hip height (a laptop on a chair or box works).</li>
+            <li>Your whole body, head to feet, must stay in the picture the whole set.</li>
+            <li>Use bright, even lighting. Avoid a bright window behind you.</li>
+          </ul>
+        </div>
+
+        <!-- Results (filled in later by app.js) -->
+        <div class="card hidden" id="results-card">
+          <h2>Results</h2>
+          <div id="results"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: the camera (black until it's turned on) -->
       <div class="video-box">
         <video id="video" playsinline muted></video>
         <!-- The skeleton is drawn on this transparent canvas, on top of the video -->
         <canvas id="overlay"></canvas>
         <div class="countdown hidden" id="countdown"></div>
       </div>
-    </div>
 
-    <!-- Results (filled in later by app.js) -->
-    <div class="card hidden" id="results-card">
-      <h2>Results</h2>
-      <div id="results"></div>
     </div>
 
   </main>
@@ -87,7 +92,7 @@
     FormFactor — <a href="methodology.html">How it works</a>
   </footer>
 
-  <!-- type="module" lets app.js import MediaPipe from a CDN in the next step -->
+  <!-- type="module" lets app.js import MediaPipe from a CDN -->
   <script type="module" src="app.js"></script>
 </body>
 </html>

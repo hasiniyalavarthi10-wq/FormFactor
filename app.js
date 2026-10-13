@@ -29,7 +29,6 @@ const setLengthSelect = document.getElementById("set-length");
 const startSetButton = document.getElementById("start-set-button");
 const stopSetButton = document.getElementById("stop-set-button");
 const statusText = document.getElementById("status");
-const videoCard = document.getElementById("video-card");
 const video = document.getElementById("video");
 const overlay = document.getElementById("overlay");
 const draw = overlay.getContext("2d");
@@ -85,7 +84,6 @@ async function startCamera() {
   // Make the drawing layer the same pixel size as the camera image
   overlay.width = video.videoWidth;
   overlay.height = video.videoHeight;
-  videoCard.classList.remove("hidden");
   startCameraButton.disabled = true;
 
   showStatus("Loading the pose model (can take about 10 seconds)...");
