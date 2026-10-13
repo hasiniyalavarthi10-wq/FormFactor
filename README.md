@@ -12,7 +12,7 @@ Built for the Congressional App Challenge.
 3. Click **Analyze** to watch your set back with your joint angles drawn on it. The lines turn
    green, yellow, or red based on your form.
 4. Get an overall result, plain-English notes with timestamps (like "Trunk leaned forward quickly
-   at 0:03"), a muscle-emphasis pattern, a squat depth check, and a button to jump to the worst moment.
+   at 0:03"), a trunk-vs-shin comparison (hip-biased, balanced, or knee-biased) with a chart, a squat depth check, and a button to jump to the worst moment.
 
 Everything runs in the browser. **The camera video never leaves your device.**
 

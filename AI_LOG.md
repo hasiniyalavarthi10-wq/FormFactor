@@ -108,3 +108,13 @@ Legend:
   limitations, sources with TODOs for exact citations) and `README.md` (run locally, deploy to
   GitHub Pages, AI Usage Disclosure draft for me to edit).
 - **I need to:** add exact citations/links from my research; edit the AI disclosure in my own words.
+
+## Change — Trunk vs. shin comparison (my research and method)
+- **I did:** found the method and the ±10° categories in Straub & Powers (2024), A Biomechanical
+  Review of the Squat Exercise: measure trunk and shin inclination with the same convention, compare
+  them (signed difference), smooth noisy frames, and "explain, don't diagnose."
+- **Claude Code wrote:** `shinAngle` in angles.js; `trunkShinDifference`, `movementBias`,
+  `averageBottomDifference` in risk.js (replacing Claude Code's earlier muscle-emphasis guess, which
+  used a made-up 15° margin); angle smoothing over 0.2 s; the comparison box at the top of playback;
+  the trunk-minus-shin chart; per-rep categories; methodology page update.
+- **Research-backed value:** `biasMargin: 10` (Straub & Powers, 2024).

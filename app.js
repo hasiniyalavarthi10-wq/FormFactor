@@ -33,6 +33,8 @@ const NO_LEVEL_COLOR = "#00e5ff";  // blue, used when a frame's level is "unknow
 
 // Speeds are measured over this many seconds, to smooth out wobbly dots
 const SPEED_WINDOW_SECONDS = 0.2;
+// Each angle is averaged over this many seconds of frames (centered on the frame)
+const SMOOTH_WINDOW_SECONDS = 0.2;
 
 // Words shown for the overall result and the muscle pattern
 const OVERALL_TEXT = {
@@ -40,11 +42,16 @@ const OVERALL_TEXT = {
   warning: "Yellow: some things to work on",
   danger: "Red: risky movement found"
 };
-const PATTERN_TEXT = {
-  "quad-dominant": "Quad-dominant (knees bend more than hips; front of thighs work harder)",
-  "posterior-chain-dominant": "Posterior-chain-dominant (hips bend more than knees; glutes, hamstrings, and back work harder)",
-  "balanced": "Balanced (hips and knees bend about the same)",
-  "unknown": "Unknown (body not clearly visible)"
+// Names and plain-English explanations for the trunk-vs-shin categories (Straub & Powers, 2024)
+const BIAS_NAME = {
+  "hip-biased": "Hip-biased",
+  "balanced": "Approximately balanced",
+  "knee-biased": "Knee-biased"
+};
+const BIAS_TEXT = {
+  "hip-biased": "Your trunk leaned more than your shin. This is associated with relatively greater demand on the hip extensors (glutes and hamstrings).",
+  "balanced": "Your trunk and shin leaned about the same amount. The demands on your hip and knee extensors are more similar.",
+  "knee-biased": "Your shin leaned more than your trunk. This is associated with relatively greater demand on the knee extensors (quadriceps)."
 };
 
 // ---- Page elements ----
@@ -77,6 +84,7 @@ let recordingStartTime = 0;  // when recording began, in milliseconds
 let recordedFrames = [];     // saved data, one entry per frame
 let repResults = [];         // one entry per squat rep: when it happened and if it reached depth
 let worstIndex = -1;         // frame number of the worst moment (-1 = none)
+let setDifference = NaN;     // average trunk-minus-shin angle at the bottom of the squat reps
 
 startCameraButton.addEventListener("click", startCamera);
 startSetButton.addEventListener("click", startSet);
@@ -318,16 +326,34 @@ function stopSet() {
 
 // ======== ANALYSIS (uses the functions in angles.js and risk.js) ========
 
-// Works out the angles, speeds, and risk level for every recorded frame
+// Works out the angles, the trunk-vs-shin comparison, speeds, and risk level for every frame
 function analyzeSet() {
+  // 1. Raw angles for every frame
   for (let i = 0; i < recordedFrames.length; i++) {
     const frame = recordedFrames[i];
-    frame.kneeAngle = kneeAngle(frame.hip, frame.knee, frame.ankle);
-    frame.hipAngle = calculateAngle(frame.shoulder, frame.hip, frame.knee);
-    frame.trunkLean = trunkLeanAngle(frame.shoulder, frame.hip);
+    frame.rawKnee = kneeAngle(frame.hip, frame.knee, frame.ankle);
+    frame.rawHip = calculateAngle(frame.shoulder, frame.hip, frame.knee);
+    frame.rawTrunk = trunkLeanAngle(frame.shoulder, frame.hip);
+    frame.rawShin = shinAngle(frame.knee, frame.ankle);
+  }
 
-    // Speeds compare this frame to one about 0.2 seconds earlier.
-    // (Comparing to the very last frame is too jumpy: MediaPipe's dots wiggle a little every frame.)
+  // 2. Smooth each angle by averaging it with nearby frames,
+  //    so one wobbly dot can't trigger feedback on its own
+  for (let i = 0; i < recordedFrames.length; i++) {
+    const frame = recordedFrames[i];
+    frame.kneeAngle = averageNearby(i, "rawKnee");
+    frame.hipAngle = averageNearby(i, "rawHip");
+    frame.trunkLean = averageNearby(i, "rawTrunk");
+    frame.shinAngle = averageNearby(i, "rawShin");
+  }
+
+  // 3. Compare trunk to shin, measure speeds, and decide the risk level
+  for (let i = 0; i < recordedFrames.length; i++) {
+    const frame = recordedFrames[i];
+    frame.difference = trunkShinDifference(frame);
+    frame.bias = movementBias(frame.difference);
+
+    // Speeds compare this frame to one about 0.2 seconds earlier
     const before = recordedFrames[frameBefore(i, SPEED_WINDOW_SECONDS)];
     frame.trunkSpeed = angularVelocity(before.trunkLean, frame.trunkLean, before.time, frame.time);
     frame.kneeSpeed = angularVelocity(before.kneeAngle, frame.kneeAngle, before.time, frame.time);
@@ -335,18 +361,42 @@ function analyzeSet() {
     frame.level = frameRiskLevel(frame, liftSelect.value);
   }
 
-  // Squats only: find each rep's bottom, then check if it reached the depth goal
+  // 4. Squats only: find each rep's bottom, check depth, and compare trunk vs. shin there
   repResults = [];
+  setDifference = NaN;
   if (liftSelect.value === "squat") {
     const bottoms = findRepBottoms(recordedFrames);
     for (let i = 0; i < bottoms.length; i++) {
       const bottomFrame = recordedFrames[bottoms[i]];
       repResults.push({
+        index: bottoms[i],
         time: bottomFrame.time,
-        reached: reachedDepth(bottomFrame, depthSelect.value)
+        reached: reachedDepth(bottomFrame, depthSelect.value),
+        difference: bottomFrame.difference,
+        bias: bottomFrame.bias
       });
     }
+    setDifference = averageBottomDifference(recordedFrames, bottoms);
   }
+}
+
+// Returns the average of one saved angle (like "rawTrunk") over frames
+// within SMOOTH_WINDOW_SECONDS around frame `index`.
+// frames[j][angleName] means "the property called angleName", e.g. frames[j].rawTrunk
+function averageNearby(index, angleName) {
+  let total = 0;
+  let count = 0;
+  for (let j = 0; j < recordedFrames.length; j++) {
+    const gap = Math.abs(recordedFrames[j].time - recordedFrames[index].time);
+    if (gap <= SMOOTH_WINDOW_SECONDS / 2 && !isNaN(recordedFrames[j][angleName])) {
+      total = total + recordedFrames[j][angleName];
+      count = count + 1;
+    }
+  }
+  if (count === 0) {
+    return NaN;
+  }
+  return total / count;
 }
 
 // Returns the number of the frame about `seconds` before frame `index` (or frame 0)
@@ -398,6 +448,46 @@ function drawPlaybackFrame(frame) {
   drawLabel(frame.shoulder, "Trunk " + formatAngle(frame.trunkLean));
   drawLabel(frame.hip, "Hip " + formatAngle(frame.hipAngle));
   drawLabel(frame.knee, "Knee " + formatAngle(frame.kneeAngle));
+  drawLabel(frame.ankle, "Shin " + formatAngle(frame.shinAngle));
+  if (liftSelect.value === "squat") {
+    drawComparisonBox(frame);
+  }
+}
+
+// Writes the trunk-vs-shin comparison at the top of the picture, like:
+//   Trunk 40° − Shin 28° = +12°
+//   Hip-biased
+function drawComparisonBox(frame) {
+  const size = textSize();
+  const middle = playback.width / 2;  // the middle stays visible even when the picture is cropped
+  const line1 = "Trunk " + formatAngle(frame.trunkLean) + " − Shin " + formatAngle(frame.shinAngle) +
+    " = " + formatSigned(frame.difference);
+  const line2 = BIAS_NAME[frame.bias] || "";
+
+  playbackDraw.font = "bold " + size + "px sans-serif";
+  playbackDraw.textAlign = "center";
+  playbackDraw.fillStyle = "rgba(0, 0, 0, 0.6)";
+  playbackDraw.fillRect(0, 0, playback.width, size * 2.8);
+  playbackDraw.fillStyle = "#ffffff";
+  playbackDraw.fillText(line1, middle, size * 1.2);
+  playbackDraw.fillText(line2, middle, size * 2.4);
+  playbackDraw.textAlign = "left";  // put it back for the joint labels
+}
+
+// Picks a text size that fits the camera's resolution (bigger picture = bigger text)
+function textSize() {
+  return Math.round(playback.height / 22);
+}
+
+// Turns a difference into text with a sign, like "+12°" or "-5°"
+function formatSigned(angle) {
+  if (typeof angle !== "number" || isNaN(angle)) {
+    return "--";
+  }
+  if (angle > 0) {
+    return "+" + Math.round(angle) + "°";
+  }
+  return Math.round(angle) + "°";
 }
 
 // Picks the line color for "safe", "warning", or "danger" (blue if no level yet)
@@ -418,7 +508,7 @@ function formatAngle(angle) {
 
 // Writes white text with a black outline just to the right of a joint
 function drawLabel(point, text) {
-  playbackDraw.font = "bold 34px sans-serif";
+  playbackDraw.font = "bold " + textSize() + "px sans-serif";
   playbackDraw.lineWidth = 6;
   playbackDraw.strokeStyle = "#000000";
   playbackDraw.fillStyle = "#ffffff";
@@ -452,11 +542,13 @@ function showResults() {
       formatTime(recordedFrames[worstIndex].time) + ")</button></p>";
   }
 
-  // Muscle emphasis panel
-  html = html + "<h3>Muscle emphasis</h3>" +
-    "<p>Pattern: <strong>" + PATTERN_TEXT[muscleEmphasis(recordedFrames)] + "</strong></p>" +
-    "<p>Lower-back load: <span class='dot " + lowerBackLoad(recordedFrames) + "'></span> <strong>" +
-    lowerBackLoad(recordedFrames) + "</strong></p>";
+  // Trunk vs. shin comparison (the muscle-emphasis panel)
+  html = html + "<h3>Trunk vs. shin</h3>" + biasHtml(lift);
+
+  // Lower-back load
+  html = html + "<h3>Lower-back load</h3>" +
+    "<p><span class='dot " + lowerBackLoad(recordedFrames) + "'></span> <strong>" +
+    lowerBackLoad(recordedFrames) + "</strong> (based on how fast your trunk angle changed)</p>";
 
   if (lift === "squat") {
     html = html + "<h3>Depth check</h3>" + depthListHtml();
@@ -469,9 +561,104 @@ function showResults() {
 
   resultsBox.innerHTML = html;
 
-  // The button only exists after the HTML above is added, so connect it now
+  // The button and chart only exist after the HTML above is added, so connect them now
   if (worstIndex !== -1) {
     document.getElementById("worst-frame-button").addEventListener("click", showWorstFrame);
+  }
+  if (lift === "squat" && !isNaN(setDifference)) {
+    drawBiasChart();
+  }
+}
+
+// Makes the trunk-vs-shin panel: the category, what it means, and a chart
+function biasHtml(lift) {
+  if (lift !== "squat") {
+    return "<p class='muted'>The trunk-vs-shin categories come from squat research, so they are only shown for squats.</p>";
+  }
+  if (isNaN(setDifference)) {
+    return "<p class='muted'>No squat reps found, so there is nothing to compare yet.</p>";
+  }
+
+  const bias = movementBias(setDifference);
+  return "<p><strong>" + BIAS_NAME[bias] + "</strong>: at the bottom of your reps, trunk minus shin was " +
+    "<strong>" + formatSigned(setDifference) + "</strong> on average.</p>" +
+    "<p>" + BIAS_TEXT[bias] + "</p>" +
+    "<canvas id='bias-chart' class='chart' width='600' height='220'></canvas>" +
+    "<p class='muted'>The chart shows trunk minus shin over the whole set: down into each rep, " +
+    "the bottom (dots), and back up. The gray band is the balanced zone (within " +
+    THRESHOLDS.biasMargin + "°). Categories from Straub &amp; Powers (2024), A Biomechanical Review of " +
+    "the Squat Exercise. This describes how the work is shared between hips and knees. It is not an " +
+    "injury risk or a form failure.</p>";
+}
+
+// Draws a line chart of trunk-minus-shin over time, with the balanced zone shaded
+function drawBiasChart() {
+  const chart = document.getElementById("bias-chart");
+  const pen = chart.getContext("2d");
+  const lastTime = recordedFrames[recordedFrames.length - 1].time;
+  const maxDegrees = 40;  // the chart shows -40° (bottom) to +40° (top)
+  if (lastTime === 0) {
+    return;
+  }
+
+  // Turns a time into a left-right position, and a difference into an up-down position
+  function xFor(time) {
+    return 50 + (time / lastTime) * (chart.width - 60);
+  }
+  function yFor(difference) {
+    let limited = difference;
+    if (limited > maxDegrees) {
+      limited = maxDegrees;
+    }
+    if (limited < -maxDegrees) {
+      limited = -maxDegrees;
+    }
+    return chart.height / 2 - (limited / maxDegrees) * (chart.height / 2 - 10);
+  }
+
+  // Background and the shaded balanced zone
+  pen.fillStyle = "#ffffff";
+  pen.fillRect(0, 0, chart.width, chart.height);
+  pen.fillStyle = "#e8eaee";
+  pen.fillRect(50, yFor(THRESHOLDS.biasMargin), chart.width - 60,
+    yFor(-THRESHOLDS.biasMargin) - yFor(THRESHOLDS.biasMargin));
+
+  // Labels for the three zones
+  pen.fillStyle = "#5b6475";
+  pen.font = "12px sans-serif";
+  pen.fillText("Hip-biased", 54, 20);
+  pen.fillText("Balanced", 54, chart.height / 2 + 4);
+  pen.fillText("Knee-biased", 54, chart.height - 10);
+  pen.fillText("+" + maxDegrees + "°", 4, 14);
+  pen.fillText("0°", 4, chart.height / 2 + 4);
+  pen.fillText("-" + maxDegrees + "°", 4, chart.height - 4);
+
+  // The line: trunk minus shin for every frame
+  pen.strokeStyle = "#2364d2";
+  pen.lineWidth = 2;
+  pen.beginPath();
+  let started = false;
+  for (let i = 0; i < recordedFrames.length; i++) {
+    const frame = recordedFrames[i];
+    if (isNaN(frame.difference)) {
+      started = false;  // skip frames with no angle, and start the line again after them
+      continue;
+    }
+    if (!started) {
+      pen.moveTo(xFor(frame.time), yFor(frame.difference));
+      started = true;
+    } else {
+      pen.lineTo(xFor(frame.time), yFor(frame.difference));
+    }
+  }
+  pen.stroke();
+
+  // A dot at the bottom of each rep
+  pen.fillStyle = "#1d2330";
+  for (let i = 0; i < repResults.length; i++) {
+    pen.beginPath();
+    pen.arc(xFor(repResults[i].time), yFor(repResults[i].difference), 5, 0, 2 * Math.PI);
+    pen.fill();
   }
 }
 
@@ -499,7 +686,8 @@ function depthListHtml() {
     } else if (rep.reached === false) {
       message = "<span class='dot warning'></span> didn't reach your depth goal";
     }
-    html = html + "<li>Rep " + (i + 1) + " at " + formatTime(rep.time) + ": " + message + "</li>";
+    html = html + "<li>Rep " + (i + 1) + " at " + formatTime(rep.time) + ": " + message +
+      " · " + (BIAS_NAME[rep.bias] || "--") + " (" + formatSigned(rep.difference) + ")</li>";
   }
   return html + "</ul>";
 }

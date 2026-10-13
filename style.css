@@ -192,6 +192,14 @@ input[type="file"] {
   margin-bottom: 8px;
 }
 
+/* Trunk-vs-shin chart in the results */
+.chart {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
 /* Small colored circles used in the results legend */
 .dot {
   display: inline-block;

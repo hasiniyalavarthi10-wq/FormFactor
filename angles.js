@@ -55,6 +55,16 @@ function trunkLeanAngle(shoulder, hip) {
 }
 
 
+// Returns how far the shin (ankle -> knee line) leans forward from straight up, in degrees.
+// Same trick and same convention as trunkLeanAngle, so the two can be compared.
+// Inputs:  knee, ankle are points { x, y }
+// Output:  0 = shin straight up, bigger = knee further forward over the toes
+function shinAngle(knee, ankle) {
+  const pointAboveAnkle = { x: ankle.x, y: ankle.y - 100 };
+  return calculateAngle(knee, ankle, pointAboveAnkle);
+}
+
+
 // Returns the knee angle in degrees (the angle at the knee between hip and ankle).
 // Inputs:  hip, knee, ankle are points { x, y }
 // Output:  about 180 standing tall, smaller as the knee bends

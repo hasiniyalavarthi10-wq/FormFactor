@@ -32,8 +32,9 @@ const THRESHOLDS = {
   parallelDrop: -0.05,          // parallel: hip about level with the knee (small allowance)
   deepDrop: 0.15,               // deep: hip clearly below the knee
 
-  // STARTING ESTIMATE: degrees one joint must bend MORE than the other to count as "dominant"
-  dominanceMargin: 15,
+  // FROM RESEARCH (Straub & Powers, 2024): if trunk and shin angles differ by more than
+  // about 10°, the squat is hip-biased or knee-biased. Within 10° it is about balanced.
+  biasMargin: 10,
 
   // MediaPipe's confidence (0 to 1) that it can see a joint. Below this, we don't trust the frame.
   minVisibility: 0.5
@@ -187,34 +188,36 @@ function worstFrameIndex(frames) {
   return worst;
 }
 
-// Returns "quad-dominant", "posterior-chain-dominant", or "balanced".
-// Looks at the deepest frame (most total bending). If the knees bend a lot more than the
-// hips, the thigh-front muscles (quads) do more of the work. If the hips bend a lot more,
-// the glutes, hamstrings, and back (posterior chain) do more.
-function muscleEmphasis(frames) {
-  let deepest = -1;
-  for (let i = 0; i < frames.length; i++) {
-    if (!jointsVisible(frames[i])) {
-      continue;
-    }
-    if (deepest === -1 || frames[i].kneeAngle + frames[i].hipAngle < frames[deepest].kneeAngle + frames[deepest].hipAngle) {
-      deepest = i;
-    }
-  }
-  if (deepest === -1) {
-    return "unknown";
-  }
+// Returns the signed difference: trunk angle minus shin angle, in degrees.
+// Positive = trunk leans more than the shin. Negative = shin leans more than the trunk.
+function trunkShinDifference(frame) {
+  return frame.trunkLean - frame.shinAngle;
+}
 
-  const kneeBend = 180 - frames[deepest].kneeAngle;
-  const hipBend = 180 - frames[deepest].hipAngle;
-
-  if (kneeBend > hipBend + THRESHOLDS.dominanceMargin) {
-    return "quad-dominant";
+// Returns "hip-biased", "balanced", or "knee-biased" for a trunk-minus-shin difference.
+// Categories from Straub & Powers (2024), A Biomechanical Review of the Squat Exercise.
+// This describes hip vs. knee demand. It is NOT an injury risk or a form failure.
+function movementBias(difference) {
+  if (difference > THRESHOLDS.biasMargin) {
+    return "hip-biased";
   }
-  if (hipBend > kneeBend + THRESHOLDS.dominanceMargin) {
-    return "posterior-chain-dominant";
+  if (difference < -THRESHOLDS.biasMargin) {
+    return "knee-biased";
   }
   return "balanced";
+}
+
+// Returns the average trunk-minus-shin difference at the bottom of the squat reps
+// (or NaN if there are no reps)
+function averageBottomDifference(frames, bottoms) {
+  if (bottoms.length === 0) {
+    return NaN;
+  }
+  let total = 0;
+  for (let i = 0; i < bottoms.length; i++) {
+    total = total + trunkShinDifference(frames[bottoms[i]]);
+  }
+  return total / bottoms.length;
 }
 
 // Turns seconds into a clock time like "0:03"
