@@ -65,6 +65,26 @@ function shinAngle(knee, ankle) {
 }
 
 
+// Returns how far the thigh (knee -> hip line) points below horizontal, in degrees.
+// This is how deep a squat is:
+//   0 = thigh level (parallel), positive = hip BELOW the knee, negative = hip ABOVE the knee.
+// Uses sine: sin(angle) = opposite / hypotenuse = (height of hip below knee) / (thigh length)
+function thighAngle(hip, knee) {
+  const thighLength = distance(hip, knee);
+  if (thighLength === 0) {
+    return NaN;
+  }
+  let sine = (hip.y - knee.y) / thighLength;  // y grows downward, so this is positive when the hip is lower
+  if (sine > 1) {
+    sine = 1;
+  }
+  if (sine < -1) {
+    sine = -1;
+  }
+  return Math.asin(sine) * 180 / Math.PI;
+}
+
+
 // Returns the knee angle in degrees (the angle at the knee between hip and ankle).
 // Inputs:  hip, knee, ankle are points { x, y }
 // Output:  about 180 standing tall, smaller as the knee bends

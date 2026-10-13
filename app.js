@@ -59,8 +59,6 @@ const BIAS_TEXT = {
 // ---- Page elements ----
 const startCameraButton = document.getElementById("start-camera-button");
 const liftSelect = document.getElementById("lift-type");
-const depthChoice = document.getElementById("depth-choice");
-const depthSelect = document.getElementById("depth-goal");
 const setLengthSelect = document.getElementById("set-length");
 const startSetButton = document.getElementById("start-set-button");
 const stopSetButton = document.getElementById("stop-set-button");
@@ -89,7 +87,7 @@ let playbackTimer = null;    // the timer that shows the next playback frame
 let isRecording = false;     // true while a set is being recorded
 let recordingStartTime = 0;  // when recording began, in milliseconds
 let recordedFrames = [];     // saved data, one entry per frame
-let repResults = [];         // one entry per squat rep: when it happened and if it reached depth
+let repResults = [];         // one entry per squat rep: when, how deep, trunk-vs-shin, and change from rep 1
 let worstIndex = -1;         // frame number of the worst moment (-1 = none)
 let setDifference = NaN;     // average trunk-minus-shin angle at the bottom of the squat reps
 let liveTrunk = [];          // the last few live trunk angles, for smoothing
@@ -102,16 +100,6 @@ analyzeButton.addEventListener("click", openResults);
 replayButton.addEventListener("click", replay);
 worstFrameButton.addEventListener("click", showWorstFrame);
 recordAgainButton.addEventListener("click", backToRecording);
-liftSelect.addEventListener("change", showDepthChoice);
-
-// Shows the depth dropdown only when Squat is selected
-function showDepthChoice() {
-  if (liftSelect.value === "squat") {
-    depthChoice.classList.remove("hidden");
-  } else {
-    depthChoice.classList.add("hidden");
-  }
-}
 
 // Shows a message under the buttons
 function showStatus(message) {
@@ -440,7 +428,8 @@ function analyzeSet() {
     frame.level = frameRiskLevel(frame, liftSelect.value);
   }
 
-  // 4. Squats only: find each rep's bottom, check depth, and compare trunk vs. shin there
+  // 4. Squats only: at the bottom of each rep, measure depth and trunk vs. shin,
+  //    then compare every rep to the first one
   repResults = [];
   setDifference = NaN;
   if (liftSelect.value === "squat") {
@@ -450,11 +439,12 @@ function analyzeSet() {
       repResults.push({
         index: bottoms[i],
         time: bottomFrame.time,
-        reached: reachedDepth(bottomFrame, depthSelect.value),
+        depth: thighAngle(bottomFrame.hip, bottomFrame.knee),
         difference: bottomFrame.difference,
         bias: bottomFrame.bias
       });
     }
+    compareToFirstRep(repResults);
     setDifference = averageBottomDifference(recordedFrames, bottoms);
   }
 }
@@ -587,11 +577,11 @@ function drawLabel(canvas, point, text) {
 
 // ======== RESULTS ========
 
-// Fills the Results box: overall result, flags, trunk vs. shin, lower back, and depth
+// Fills the Results box: overall result, flags, trunk vs. shin, lower back, and rep-by-rep table
 function showResults() {
   const lift = liftSelect.value;
   const overall = overallLevel(recordedFrames, repResults);
-  const flags = buildFlags(recordedFrames, lift, depthSelect.value, repResults);
+  const flags = buildFlags(recordedFrames, lift, repResults);
   worstIndex = worstFrameIndex(recordedFrames);
 
   let html = "<div class='overall " + overall + "'>" + OVERALL_TEXT[overall] + "</div>";
@@ -621,7 +611,7 @@ function showResults() {
     lowerBackLoad(recordedFrames) + "</strong> (based on how fast your trunk angle changed)</p>";
 
   if (lift === "squat") {
-    html = html + "<h3>Depth check</h3>" + depthListHtml();
+    html = html + "<h3>Rep by rep (compared to rep 1)</h3>" + repTableHtml();
   }
 
   html = html +
@@ -737,23 +727,45 @@ function showWorstFrame() {
     ". Click Replay to play the whole set again.");
 }
 
-// Makes the list of reps, like "Rep 1 at 0:02: reached your depth goal"
-function depthListHtml() {
+// Makes a table with one row per rep: depth and trunk-vs-shin, and how each changed from rep 1
+function repTableHtml() {
   if (repResults.length === 0) {
     return "<p class='muted'>No reps found. Make sure your knees bend well past standing during each rep.</p>";
   }
 
-  let html = "<ul>";
+  let html = "<div class='table-wrap'><table class='rep-table'>" +
+    "<tr><th>Rep</th><th>Time</th><th>Depth</th><th>vs. rep 1</th><th>Trunk − Shin</th><th>vs. rep 1</th></tr>";
+
   for (let i = 0; i < repResults.length; i++) {
     const rep = repResults[i];
-    let message = "--";
-    if (rep.reached === true) {
-      message = "<span class='dot safe'></span> reached your depth goal";
-    } else if (rep.reached === false) {
-      message = "<span class='dot warning'></span> didn't reach your depth goal";
+    let depthChangeText = "—";
+    let patternChangeText = "—";
+    if (i > 0) {
+      depthChangeText = changeCell(rep.depthChange, isLessDeep(rep));
+      patternChangeText = changeCell(rep.patternChange, isPatternShift(rep));
     }
-    html = html + "<li>Rep " + (i + 1) + " at " + formatTime(rep.time) + ": " + message +
-      " · " + (BIAS_NAME[rep.bias] || "--") + " (" + formatSigned(rep.difference) + ")</li>";
+    html = html + "<tr>" +
+      "<td>" + (i + 1) + "</td>" +
+      "<td>" + formatTime(rep.time) + "</td>" +
+      "<td>" + formatSigned(rep.depth) + "</td>" +
+      "<td>" + depthChangeText + "</td>" +
+      "<td>" + formatSigned(rep.difference) + "<br><span class='muted'>" + (BIAS_NAME[rep.bias] || "--") + "</span></td>" +
+      "<td>" + patternChangeText + "</td>" +
+      "</tr>";
   }
-  return html + "</ul>";
+
+  html = html + "</table></div>" +
+    "<p class='muted'>Depth is your thigh angle at the bottom of the rep: 0° = thigh level (parallel), " +
+    "+ = hip below knee, − = hip above knee. Each rep is compared to your first rep, so the app can spot " +
+    "changes during the set (like getting less deep as you tire) without needing to know your depth goal. " +
+    "A yellow dot means the change was more than " + THRESHOLDS.depthChangeWarning + "°.</p>";
+  return html;
+}
+
+// Makes one "vs. rep 1" cell: the signed change, with a yellow dot if it's a big change
+function changeCell(change, isBig) {
+  if (isBig) {
+    return "<span class='dot warning'></span> " + formatSigned(change);
+  }
+  return formatSigned(change);
 }

@@ -233,6 +233,25 @@ input[type="file"] {
   justify-content: center;
 }
 
+/* Rep-by-rep table (scrolls sideways on small phones instead of squishing) */
+.table-wrap {
+  overflow-x: auto;
+}
+
+.rep-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.rep-table th,
+.rep-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
 /* Trunk-vs-shin chart in the results */
 .chart {
   width: 100%;

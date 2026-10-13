@@ -134,3 +134,11 @@ Legend:
   the right), with Replay, Show worst moment, and Record another set buttons; the camera stays on screen
   while scrolling. It is a second screen in the same page, not a separate HTML file, so the recorded
   pictures never have to be saved anywhere.
+
+## Change — Compare each rep to the first rep instead of a depth goal (my idea)
+- **My idea:** we don't know each person's depth goal, so compare every squat rep to the first rep to
+  show fluctuations during the set.
+- **Claude Code wrote:** `thighAngle` in angles.js (depth as the thigh angle at the bottom of a rep);
+  `compareToFirstRep`, `isLessDeep`, `isPatternShift` in risk.js (replacing `reachedDepth` and the depth
+  goal dropdown); the rep-by-rep table; new flags like "Rep 3 was about 20° less deep than rep 1."
+- **Starting estimates (not research):** `depthChangeWarning: 10`, `patternChangeWarning: 10`. TODO (me): tune.

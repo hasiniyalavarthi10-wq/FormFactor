@@ -4,8 +4,9 @@
 // Design decisions (mine):
 //   - Red (danger) only comes from the trunk angle CHANGING fast, because my research
 //     says the hazard is the back angle shifting mid-lift.
-//   - Trunk lean and missed squat depth are only yellow (warning), because how much
-//     you lean depends on your leg length, and a shallow squat isn't dangerous.
+//   - Trunk lean is only yellow (warning), because how much you lean depends on leg length.
+//   - We don't know each person's depth goal, so each squat rep is compared to the FIRST rep.
+//     Big changes during the set (like getting less deep) are yellow.
 //
 // (Logic written by Claude Code at my request. The 45° value comes from my research.
 //  I plan to review the logic and tune the other numbers with my own recorded lifts.)
@@ -27,10 +28,9 @@ const THRESHOLDS = {
   repStartKneeAngle: 140,       // knee bends past this = a rep has started
   repEndKneeAngle: 160,         // knee straightens past this = back to standing
 
-  // STARTING ESTIMATES: squat depth, measured as how far the hip is below the knee,
-  // as a fraction of thigh length (so it works for any body size or camera distance)
-  parallelDrop: -0.05,          // parallel: hip about level with the knee (small allowance)
-  deepDrop: 0.15,               // deep: hip clearly below the knee
+  // STARTING ESTIMATES: comparing each rep to the first rep (degrees)
+  depthChangeWarning: 10,       // a rep this much less deep than rep 1 = warning
+  patternChangeWarning: 10,     // trunk-minus-shin this much different from rep 1 = warning
 
   // FROM RESEARCH (Straub & Powers, 2024): if trunk and shin angles differ by more than
   // about 10°, the squat is hip-biased or knee-biased. Within 10° it is about balanced.
@@ -119,17 +119,30 @@ function findRepBottoms(frames) {
   return bottoms;
 }
 
-// Returns true if the hip got low enough at the bottom of a rep.
-// depthGoal is "parallel" or "deep".
-function reachedDepth(bottomFrame, depthGoal) {
-  const thighLength = distance(bottomFrame.hip, bottomFrame.knee);
-  const hipBelowKnee = bottomFrame.hip.y - bottomFrame.knee.y;  // positive = hip lower (y grows downward)
-  const drop = hipBelowKnee / thighLength;
-
-  if (depthGoal === "deep") {
-    return drop >= THRESHOLDS.deepDrop;
+// Compares every rep to the FIRST rep. We don't know each person's depth goal,
+// so instead we look for changes during the set (for example, going less deep as you get tired).
+// Adds to each rep:
+//   rep.depthChange   = this rep's depth minus rep 1's depth (negative = less deep than rep 1)
+//   rep.patternChange = this rep's trunk-minus-shin minus rep 1's (positive = more trunk lean)
+function compareToFirstRep(repResults) {
+  if (repResults.length === 0) {
+    return;
   }
-  return drop >= THRESHOLDS.parallelDrop;
+  const first = repResults[0];
+  for (let i = 0; i < repResults.length; i++) {
+    repResults[i].depthChange = repResults[i].depth - first.depth;
+    repResults[i].patternChange = repResults[i].difference - first.difference;
+  }
+}
+
+// Returns true if this rep was a lot less deep than rep 1
+function isLessDeep(rep) {
+  return rep.depthChange < -THRESHOLDS.depthChangeWarning;
+}
+
+// Returns true if this rep's trunk-vs-shin pattern changed a lot from rep 1
+function isPatternShift(rep) {
+  return Math.abs(rep.patternChange) > THRESHOLDS.patternChangeWarning;
 }
 
 
@@ -157,11 +170,12 @@ function lowerBackLoad(frames) {
   return worst;
 }
 
-// Returns the overall result for the set: worst frame, and a warning if any rep missed depth
+// Returns the overall result for the set: the worst frame, and a warning if any rep
+// changed a lot compared to rep 1
 function overallLevel(frames, repResults) {
   let overall = lowerBackLoad(frames);
   for (let i = 0; i < repResults.length; i++) {
-    if (repResults[i].reached === false && overall === "safe") {
+    if ((isLessDeep(repResults[i]) || isPatternShift(repResults[i])) && overall === "safe") {
       overall = "warning";
     }
   }
@@ -231,7 +245,7 @@ function formatTime(seconds) {
 }
 
 // Returns a list of plain-English messages about the set
-function buildFlags(frames, lift, depthGoal, repResults) {
+function buildFlags(frames, lift, repResults) {
   const flags = [];
 
   // 1. Fastest forward chest drop
@@ -277,16 +291,21 @@ function buildFlags(frames, lift, depthGoal, repResults) {
     }
   }
 
-  // 4. Reps that missed the depth goal (one summary line; each rep is listed under Depth check)
-  let missedCount = 0;
-  for (let i = 0; i < repResults.length; i++) {
-    if (repResults[i].reached === false) {
-      missedCount = missedCount + 1;
+  // 4. Reps that changed a lot compared to rep 1 (see the Rep-by-rep table)
+  for (let i = 1; i < repResults.length; i++) {
+    const rep = repResults[i];
+    if (isLessDeep(rep)) {
+      flags.push("Rep " + (i + 1) + " (at " + formatTime(rep.time) + ") was about " +
+        Math.round(-rep.depthChange) + "° less deep than rep 1. Depth dropping during a set can be a sign of fatigue.");
     }
-  }
-  if (missedCount > 0) {
-    flags.push(missedCount + " of " + repResults.length + " reps didn't reach your " + depthGoal +
-      " depth goal (see Depth check below). This isn't a back-safety problem, but you get less out of each rep.");
+    if (isPatternShift(rep)) {
+      let leanWord = "more";
+      if (rep.patternChange < 0) {
+        leanWord = "less";
+      }
+      flags.push("In rep " + (i + 1) + " your trunk leaned about " + Math.round(Math.abs(rep.patternChange)) +
+        "° " + leanWord + " compared to your shin than in rep 1, so the work shifted between hips and knees.");
+    }
   }
 
   // 5. Frames where the body was hard to see
