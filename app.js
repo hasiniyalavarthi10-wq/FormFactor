@@ -35,6 +35,8 @@ const NO_LEVEL_COLOR = "#00e5ff";  // blue, used when a frame's level is "unknow
 const SPEED_WINDOW_SECONDS = 0.2;
 // Each angle is averaged over this many seconds of frames (centered on the frame)
 const SMOOTH_WINDOW_SECONDS = 0.2;
+// The live view averages this many frames so its numbers don't flicker
+const LIVE_SMOOTH_FRAMES = 5;
 
 // Words shown for the overall result and the muscle pattern
 const OVERALL_TEXT = {
@@ -85,6 +87,8 @@ let recordedFrames = [];     // saved data, one entry per frame
 let repResults = [];         // one entry per squat rep: when it happened and if it reached depth
 let worstIndex = -1;         // frame number of the worst moment (-1 = none)
 let setDifference = NaN;     // average trunk-minus-shin angle at the bottom of the squat reps
+let liveTrunk = [];          // the last few live trunk angles, for smoothing
+let liveShin = [];           // the last few live shin angles, for smoothing
 
 startCameraButton.addEventListener("click", startCamera);
 startSetButton.addEventListener("click", startSet);
@@ -168,7 +172,11 @@ function processFrame() {
       const landmarks = result.landmarks[0];
       const joints = getBestSideJoints(landmarks);
       drawFullBody(landmarks);
-      drawSide(draw, joints, NO_LEVEL_COLOR);
+
+      // Live trunk and shin angles (smoothed a little so they don't flicker)
+      const trunk = smoothLive(liveTrunk, trunkLeanAngle(joints.shoulder, joints.hip));
+      const shin = smoothLive(liveShin, shinAngle(joints.knee, joints.ankle));
+      drawFigureStyle(draw, joints, trunk, shin, NO_LEVEL_COLOR);
       if (isRecording) {
         saveFrame(joints, now);
       }
@@ -229,11 +237,76 @@ function drawFullBody(landmarks) {
   }
 }
 
-// Draws the analyzed side in one color: shoulder - hip - knee - ankle
-function drawSide(canvas, joints, color) {
-  drawLine(canvas, joints.shoulder, joints.hip, color, 8);
-  drawLine(canvas, joints.hip, joints.knee, color, 8);
-  drawLine(canvas, joints.knee, joints.ankle, color, 8);
+// Draws the analyzed side like the Straub & Powers figure:
+//   - the trunk line (hip to shoulder) and shin line (ankle to knee) in `color`
+//   - a white straight-up reference line at the hip and at the ankle
+//   - each angle's number next to its reference line
+//   - "Trunk − Shin = +18°" (and the category, for squats) at the bottom
+function drawFigureStyle(canvas, joints, trunk, shin, color) {
+  drawLine(canvas, joints.hip, joints.knee, color, 4);        // thigh, thinner
+  drawLine(canvas, joints.hip, joints.shoulder, color, 8);    // trunk
+  drawLine(canvas, joints.ankle, joints.knee, color, 8);      // shin
+
+  // Straight-up reference lines, as tall as the trunk and shin
+  const aboveHip = { x: joints.hip.x, y: joints.shoulder.y };
+  const aboveAnkle = { x: joints.ankle.x, y: joints.knee.y };
+  drawLine(canvas, joints.hip, aboveHip, "#ffffff", 4);
+  drawLine(canvas, joints.ankle, aboveAnkle, "#ffffff", 4);
+
+  // Angle numbers, on the side of the reference line away from the body
+  drawAngleNumber(canvas, aboveHip, formatAngle(trunk), joints.shoulder.x > joints.hip.x);
+  drawAngleNumber(canvas, aboveAnkle, formatAngle(shin), joints.knee.x > joints.ankle.x);
+
+  // Bottom band: the comparison
+  const size = textSize();
+  const width = canvas.canvas.width;
+  const height = canvas.canvas.height;
+  const difference = trunk - shin;
+  let category = "";
+  if (liftSelect.value === "squat" && !isNaN(difference)) {
+    category = BIAS_NAME[movementBias(difference)];
+  }
+
+  canvas.fillStyle = "rgba(0, 0, 0, 0.6)";
+  canvas.fillRect(0, height - size * 2.8, width, size * 2.8);
+  canvas.fillStyle = "#ffffff";
+  canvas.font = "bold " + size + "px sans-serif";
+  canvas.textAlign = "center";  // the middle stays visible even when the picture is cropped
+  canvas.fillText("Trunk − Shin = " + formatSigned(difference), width / 2, height - size * 1.6);
+  canvas.fillText(category, width / 2, height - size * 0.4);
+  canvas.textAlign = "left";
+}
+
+// Writes an angle number beside the top of a reference line.
+// If the body part leans to the right, the number goes on the left, and the other way around.
+function drawAngleNumber(canvas, point, text, leansRight) {
+  const size = textSize();
+  canvas.font = "bold " + size + "px sans-serif";
+  canvas.lineWidth = 6;
+  canvas.strokeStyle = "#000000";
+  canvas.fillStyle = "#ffffff";
+  let x = point.x + 12;
+  if (leansRight) {
+    canvas.textAlign = "right";
+    x = point.x - 12;
+  }
+  canvas.strokeText(text, x, point.y + size);
+  canvas.fillText(text, x, point.y + size);
+  canvas.textAlign = "left";
+}
+
+// Adds a new live angle to a short list and returns the average of the list,
+// so the live numbers don't flicker
+function smoothLive(list, value) {
+  list.push(value);
+  if (list.length > LIVE_SMOOTH_FRAMES) {
+    list.shift();  // remove the oldest value
+  }
+  let total = 0;
+  for (let i = 0; i < list.length; i++) {
+    total = total + list[i];
+  }
+  return total / list.length;
 }
 
 // Saves one frame: time, side, four joints, and a picture for playback
@@ -444,39 +517,14 @@ function stopPlayback() {
 // Draws one saved frame: the picture, colored lines, and angle labels
 function drawPlaybackFrame(frame) {
   playbackDraw.drawImage(frame.picture, 0, 0, playback.width, playback.height);
-  drawSide(playbackDraw, frame, colorForLevel(frame.level));
-  drawLabel(frame.shoulder, "Trunk " + formatAngle(frame.trunkLean));
-  drawLabel(frame.hip, "Hip " + formatAngle(frame.hipAngle));
-  drawLabel(frame.knee, "Knee " + formatAngle(frame.kneeAngle));
-  drawLabel(frame.ankle, "Shin " + formatAngle(frame.shinAngle));
-  if (liftSelect.value === "squat") {
-    drawComparisonBox(frame);
-  }
-}
-
-// Writes the trunk-vs-shin comparison at the top of the picture, like:
-//   Trunk 40° − Shin 28° = +12°
-//   Hip-biased
-function drawComparisonBox(frame) {
-  const size = textSize();
-  const middle = playback.width / 2;  // the middle stays visible even when the picture is cropped
-  const line1 = "Trunk " + formatAngle(frame.trunkLean) + " − Shin " + formatAngle(frame.shinAngle) +
-    " = " + formatSigned(frame.difference);
-  const line2 = BIAS_NAME[frame.bias] || "";
-
-  playbackDraw.font = "bold " + size + "px sans-serif";
-  playbackDraw.textAlign = "center";
-  playbackDraw.fillStyle = "rgba(0, 0, 0, 0.6)";
-  playbackDraw.fillRect(0, 0, playback.width, size * 2.8);
-  playbackDraw.fillStyle = "#ffffff";
-  playbackDraw.fillText(line1, middle, size * 1.2);
-  playbackDraw.fillText(line2, middle, size * 2.4);
-  playbackDraw.textAlign = "left";  // put it back for the joint labels
+  drawFigureStyle(playbackDraw, frame, frame.trunkLean, frame.shinAngle, colorForLevel(frame.level));
+  drawLabel(playbackDraw, frame.hip, "Hip " + formatAngle(frame.hipAngle));
+  drawLabel(playbackDraw, frame.knee, "Knee " + formatAngle(frame.kneeAngle));
 }
 
 // Picks a text size that fits the camera's resolution (bigger picture = bigger text)
 function textSize() {
-  return Math.round(playback.height / 22);
+  return Math.round(video.videoHeight / 22);
 }
 
 // Turns a difference into text with a sign, like "+12°" or "-5°"
@@ -507,13 +555,13 @@ function formatAngle(angle) {
 }
 
 // Writes white text with a black outline just to the right of a joint
-function drawLabel(point, text) {
-  playbackDraw.font = "bold " + textSize() + "px sans-serif";
-  playbackDraw.lineWidth = 6;
-  playbackDraw.strokeStyle = "#000000";
-  playbackDraw.fillStyle = "#ffffff";
-  playbackDraw.strokeText(text, point.x + 18, point.y);
-  playbackDraw.fillText(text, point.x + 18, point.y);
+function drawLabel(canvas, point, text) {
+  canvas.font = "bold " + textSize() + "px sans-serif";
+  canvas.lineWidth = 6;
+  canvas.strokeStyle = "#000000";
+  canvas.fillStyle = "#ffffff";
+  canvas.strokeText(text, point.x + 18, point.y);
+  canvas.fillText(text, point.x + 18, point.y);
 }
 
 // ======== RESULTS ========
