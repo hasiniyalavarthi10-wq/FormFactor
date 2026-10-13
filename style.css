@@ -136,9 +136,10 @@ input[type="file"] {
     grid-template-columns: auto 1fr;
   }
 
-  /* The camera stays on screen while you scroll down to read the results.
-     (".app-layout .video-box" is more specific than ".video-box", so it wins.) */
-  .app-layout .video-box {
+  /* Anything marked "sticky" stays on screen while you scroll (the live camera, and the
+     playback together with its buttons). ".app-layout .sticky" is more specific than
+     ".video-box", so its "position" wins. */
+  .app-layout .sticky {
     position: sticky;
     top: 16px;
   }

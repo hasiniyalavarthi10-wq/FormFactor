@@ -75,7 +75,7 @@
       </div>
 
       <!-- RIGHT COLUMN: the camera (black until it's turned on) -->
-      <div class="video-box">
+      <div class="video-box sticky">
         <video id="video" playsinline muted></video>
         <!-- The skeleton is drawn on this transparent canvas, on top of the video -->
         <canvas id="overlay"></canvas>
@@ -88,8 +88,8 @@
          Two columns on a computer: playback on the left, analysis on the right -->
     <div class="app-layout results-layout hidden" id="results-view">
 
-      <!-- LEFT COLUMN: playback of the recorded set -->
-      <div>
+      <!-- LEFT COLUMN: playback of the recorded set, with its buttons (they stay on screen together) -->
+      <div class="sticky">
         <div class="video-box">
           <canvas id="playback"></canvas>
         </div>

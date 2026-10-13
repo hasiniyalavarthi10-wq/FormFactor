@@ -142,3 +142,9 @@ Legend:
   `compareToFirstRep`, `isLessDeep`, `isPatternShift` in risk.js (replacing `reachedDepth` and the depth
   goal dropdown); the rep-by-rep table; new flags like "Rep 3 was about 20° less deep than rep 1."
 - **Starting estimates (not research):** `depthChangeWarning: 10`, `patternChangeWarning: 10`. TODO (me): tune.
+
+## Fix — Playback covered its buttons when scrolling (found in my testing)
+- **I found:** on the results screen, scrolling made the playback slide over the Replay / Show worst
+  moment / Record another set buttons.
+- **Claude Code wrote:** the fix: the whole left column (playback + buttons) now stays on screen
+  together, using a `sticky` class instead of making only the video sticky.
