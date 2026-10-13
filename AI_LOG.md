@@ -36,3 +36,12 @@ Legend:
 - **I found:** while testing, clicking Stop never said "Countdown cancelled" because I
   couldn't see the countdown numbers (they were on the video, scrolled out of view).
 - **Claude Code wrote:** the fix — the countdown now also shows in the status text next to the buttons.
+
+## Step (b) — MediaPipe pose detection + live skeleton overlay
+- **Claude Code wrote:** in `app.js`: loading MediaPipe Tasks Vision (pinned v0.10.14) and the
+  pose_landmarker_full model, the frame loop, choosing the more visible body side,
+  converting landmarks to pixels, drawing the skeleton on a canvas, saving each recorded
+  frame (time, side, shoulder/hip/knee/ankle, snapshot), and a temporary recording summary.
+  Added the `<canvas>` overlay in `app.html` and its styles in `style.css`.
+- **I wrote:** _(fill in)_
+- **I changed:** _(fill in)_
