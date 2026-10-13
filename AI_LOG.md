@@ -67,3 +67,11 @@ Legend:
 - **Claude Code wrote:** empty function stubs with comments (inputs/outputs) in `angles.js`,
   the `<script>` tag that loads it, and explanations of the concepts and formulas.
 - **I wrote:** _(fill in as I write each function)_
+
+## Change — Analyze button with color-coded playback (my design)
+- **My decision:** after recording, clicking Analyze plays the set back with the joint angles
+  written on screen and the lines colored by form (green / yellow / red).
+- **Claude Code wrote:** the Analyze button, the playback canvas, saving a picture of each frame,
+  `analyzeSet` (calls my functions for every frame), playback timing, colored lines, angle labels,
+  and the color legend. Also the empty `risk.js` stub with a placeholder THRESHOLDS object.
+- **My code that feeds it:** angles from `angles.js` and the color level from `risk.js` (not written yet).

@@ -55,6 +55,9 @@
             <button class="button" id="start-set-button" disabled>4. Start set</button>
             <button class="button" id="stop-set-button" disabled>Stop</button>
           </p>
+          <p>
+            <button class="button" id="analyze-button" disabled>5. Analyze</button>
+          </p>
           <p class="status" id="status">Camera is off.</p>
         </div>
 
@@ -81,6 +84,8 @@
         <video id="video" playsinline muted></video>
         <!-- The skeleton is drawn on this transparent canvas, on top of the video -->
         <canvas id="overlay"></canvas>
+        <!-- Playback of the recorded set covers the live camera while it plays -->
+        <canvas id="playback" class="hidden"></canvas>
         <div class="countdown hidden" id="countdown"></div>
       </div>
 
@@ -94,6 +99,8 @@
 
   <!-- My angle math. Loaded first so app.js can use its functions. -->
   <script src="angles.js"></script>
+  <!-- My risk logic. Also loaded before app.js. -->
+  <script src="risk.js"></script>
   <!-- type="module" lets app.js import MediaPipe from a CDN -->
   <script type="module" src="app.js"></script>
 </body>

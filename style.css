@@ -166,6 +166,26 @@ input[type="file"] {
   margin-top: 8px;
 }
 
+/* Small colored circles used in the results legend */
+.dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.dot.safe {
+  background: var(--safe);
+}
+
+.dot.warning {
+  background: var(--warning);
+}
+
+.dot.danger {
+  background: var(--danger);
+}
+
 /* Big countdown number centered on top of the video */
 .countdown {
   position: absolute;

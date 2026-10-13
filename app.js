@@ -1,6 +1,7 @@
 // FormFactor - app.js
 // Turns on the webcam, finds the body with MediaPipe, draws a skeleton live,
-// and saves each frame's joint positions while a set is being recorded.
+// saves each frame while a set is recorded, then plays the set back with
+// angles (from my angles.js) and colors (from my risk.js).
 
 // MediaPipe pose detection, loaded from a CDN (version pinned so it can't change on us)
 import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
@@ -22,16 +23,27 @@ const FULL_BODY_LINES = [
   [12, 24], [24, 26], [26, 28]              // right side
 ];
 
+// Line colors for each risk level during playback
+const LEVEL_COLORS = {
+  safe: "#00c853",     // green
+  warning: "#ffd600",  // yellow
+  danger: "#ff1744"    // red
+};
+const NO_LEVEL_COLOR = "#00e5ff";  // blue, used until risk.js gives a level
+
 // ---- Page elements ----
 const startCameraButton = document.getElementById("start-camera-button");
 const liftSelect = document.getElementById("lift-type");
 const setLengthSelect = document.getElementById("set-length");
 const startSetButton = document.getElementById("start-set-button");
 const stopSetButton = document.getElementById("stop-set-button");
+const analyzeButton = document.getElementById("analyze-button");
 const statusText = document.getElementById("status");
 const video = document.getElementById("video");
 const overlay = document.getElementById("overlay");
 const draw = overlay.getContext("2d");
+const playback = document.getElementById("playback");
+const playbackDraw = playback.getContext("2d");
 const countdownText = document.getElementById("countdown");
 const resultsCard = document.getElementById("results-card");
 const resultsBox = document.getElementById("results");
@@ -41,6 +53,7 @@ let poseLandmarker = null;   // the MediaPipe pose detector
 let lastVideoTime = -1;      // so we analyze each camera frame only once
 let countdownTimer = null;   // the 1-second countdown timer
 let stopTimer = null;        // the timer that ends the set
+let playbackTimer = null;    // the timer that shows the next playback frame
 let isRecording = false;     // true while a set is being recorded
 let recordingStartTime = 0;  // when recording began, in milliseconds
 let recordedFrames = [];     // saved data, one entry per frame
@@ -48,6 +61,7 @@ let recordedFrames = [];     // saved data, one entry per frame
 startCameraButton.addEventListener("click", startCamera);
 startSetButton.addEventListener("click", startSet);
 stopSetButton.addEventListener("click", stopSet);
+analyzeButton.addEventListener("click", startPlayback);
 
 // Shows a message under the buttons
 function showStatus(message) {
@@ -81,9 +95,11 @@ async function startCamera() {
     return;
   }
 
-  // Make the drawing layer the same pixel size as the camera image
+  // Make both drawing layers the same pixel size as the camera image
   overlay.width = video.videoWidth;
   overlay.height = video.videoHeight;
+  playback.width = video.videoWidth;
+  playback.height = video.videoHeight;
   startCameraButton.disabled = true;
 
   showStatus("Loading the pose model (can take about 10 seconds)...");
@@ -99,7 +115,7 @@ async function startCamera() {
   requestAnimationFrame(processFrame);
 }
 
-// ======== FRAME LOOP ========
+// ======== LIVE FRAME LOOP ========
 
 // Runs on every screen refresh: find the body, draw it, save it if recording
 function processFrame() {
@@ -114,7 +130,7 @@ function processFrame() {
       const landmarks = result.landmarks[0];
       const joints = getBestSideJoints(landmarks);
       drawFullBody(landmarks);
-      drawSide(joints);
+      drawSide(draw, joints, NO_LEVEL_COLOR);
       if (isRecording) {
         saveFrame(joints, now);
       }
@@ -156,14 +172,14 @@ function getBestSideJoints(landmarks) {
   };
 }
 
-// Draws one straight line between two points
-function drawLine(start, end, color, width) {
-  draw.strokeStyle = color;
-  draw.lineWidth = width;
-  draw.beginPath();
-  draw.moveTo(start.x, start.y);
-  draw.lineTo(end.x, end.y);
-  draw.stroke();
+// Draws one straight line between two points on the given canvas
+function drawLine(canvas, start, end, color, width) {
+  canvas.strokeStyle = color;
+  canvas.lineWidth = width;
+  canvas.beginPath();
+  canvas.moveTo(start.x, start.y);
+  canvas.lineTo(end.x, end.y);
+  canvas.stroke();
 }
 
 // Draws a thin white skeleton of the whole body (display only)
@@ -171,18 +187,18 @@ function drawFullBody(landmarks) {
   for (let i = 0; i < FULL_BODY_LINES.length; i++) {
     const start = toPixels(landmarks[FULL_BODY_LINES[i][0]]);
     const end = toPixels(landmarks[FULL_BODY_LINES[i][1]]);
-    drawLine(start, end, "rgba(255,255,255,0.6)", 3);
+    drawLine(draw, start, end, "rgba(255,255,255,0.6)", 3);
   }
 }
 
-// Draws the analyzed side in bright blue: shoulder - hip - knee - ankle
-function drawSide(joints) {
-  drawLine(joints.shoulder, joints.hip, "#00e5ff", 6);
-  drawLine(joints.hip, joints.knee, "#00e5ff", 6);
-  drawLine(joints.knee, joints.ankle, "#00e5ff", 6);
+// Draws the analyzed side in one color: shoulder - hip - knee - ankle
+function drawSide(canvas, joints, color) {
+  drawLine(canvas, joints.shoulder, joints.hip, color, 8);
+  drawLine(canvas, joints.hip, joints.knee, color, 8);
+  drawLine(canvas, joints.knee, joints.ankle, color, 8);
 }
 
-// Saves one frame: time, side, four joints, and a small picture for the results
+// Saves one frame: time, side, four joints, and a picture for playback
 function saveFrame(joints, now) {
   recordedFrames.push({
     time: (now - recordingStartTime) / 1000,  // seconds since recording started
@@ -191,27 +207,30 @@ function saveFrame(joints, now) {
     hip: joints.hip,
     knee: joints.knee,
     ankle: joints.ankle,
-    snapshot: takeSnapshot()
+    picture: takePicture()
   });
 }
 
-// Makes a small JPEG picture of the video with the skeleton on top
-function takeSnapshot() {
-  const picture = document.createElement("canvas");
-  picture.width = 320;
-  picture.height = Math.round(320 * video.videoHeight / video.videoWidth);
-  const pictureDraw = picture.getContext("2d");
-  pictureDraw.drawImage(video, 0, 0, picture.width, picture.height);
-  pictureDraw.drawImage(overlay, 0, 0, picture.width, picture.height);
-  return picture.toDataURL("image/jpeg", 0.7);
+// Makes a small JPEG picture of the camera image (no skeleton) for playback
+function takePicture() {
+  const small = document.createElement("canvas");
+  small.width = 480;
+  small.height = Math.round(480 * video.videoHeight / video.videoWidth);
+  small.getContext("2d").drawImage(video, 0, 0, small.width, small.height);
+
+  const picture = new Image();
+  picture.src = small.toDataURL("image/jpeg", 0.7);
+  return picture;
 }
 
 // ======== SET TIMING ========
 
 // "Start set" clicked: count down, then start recording
 function startSet() {
+  stopPlayback();
   startSetButton.disabled = true;
   stopSetButton.disabled = false;
+  analyzeButton.disabled = true;
   resultsCard.classList.add("hidden");
 
   let secondsLeft = COUNTDOWN_SECONDS;
@@ -247,36 +266,124 @@ function stopSet() {
   clearInterval(countdownTimer);
   clearTimeout(stopTimer);
   showCountdown("");
-
-  if (isRecording) {
-    isRecording = false;
-    showResults();
-  } else {
-    showStatus("Countdown cancelled.");
-  }
-
   startSetButton.disabled = false;
   stopSetButton.disabled = true;
-}
 
-// ======== RESULTS (temporary: step d replaces this) ========
-
-// Shows how many frames were saved and a picture from the middle of the set
-function showResults() {
-  showStatus("Set finished.");
-  resultsCard.classList.remove("hidden");
-  window.recordedFrames = recordedFrames;  // lets us look at the data in the console
-
-  if (recordedFrames.length === 0) {
-    resultsBox.innerHTML = "<p>No body found. Step back so your whole body is in view and try again.</p>";
+  if (!isRecording) {
+    showStatus("Countdown cancelled.");
     return;
   }
 
-  const seconds = (performance.now() - recordingStartTime) / 1000;
-  const middle = recordedFrames[Math.floor(recordedFrames.length / 2)];
+  isRecording = false;
+  window.recordedFrames = recordedFrames;  // lets me look at the data in the console
+
+  if (recordedFrames.length === 0) {
+    showStatus("No body was found. Step back so your whole body is in view and try again.");
+    return;
+  }
+
+  analyzeButton.disabled = false;
+  showStatus("Set recorded (" + recordedFrames.length + " frames). Click Analyze to watch it back.");
+}
+
+// ======== ANALYSIS (uses MY functions from angles.js and risk.js) ========
+
+// Works out the angles, speeds, and risk level for every recorded frame
+function analyzeSet() {
+  for (let i = 0; i < recordedFrames.length; i++) {
+    const frame = recordedFrames[i];
+    frame.kneeAngle = kneeAngle(frame.hip, frame.knee, frame.ankle);
+    frame.hipAngle = calculateAngle(frame.shoulder, frame.hip, frame.knee);
+    frame.trunkLean = trunkLeanAngle(frame.shoulder, frame.hip);
+
+    // Speeds compare this frame to the one before it (the first frame has none)
+    if (i === 0) {
+      frame.trunkSpeed = 0;
+      frame.kneeSpeed = 0;
+    } else {
+      const before = recordedFrames[i - 1];
+      frame.trunkSpeed = angularVelocity(before.trunkLean, frame.trunkLean, before.time, frame.time);
+      frame.kneeSpeed = angularVelocity(before.kneeAngle, frame.kneeAngle, before.time, frame.time);
+    }
+
+    frame.level = frameRiskLevel(frame, liftSelect.value);
+  }
+}
+
+// ======== PLAYBACK ========
+
+// "Analyze" clicked: analyze the set, then play it back from the start
+function startPlayback() {
+  stopPlayback();
+  analyzeSet();
+  playback.classList.remove("hidden");
+  showLegend();
+  playFrame(0);
+}
+
+// Shows one frame, then waits the real time gap before showing the next one
+function playFrame(index) {
+  const frame = recordedFrames[index];
+  drawPlaybackFrame(frame);
+  showStatus("Playback: " + frame.time.toFixed(1) + " seconds");
+
+  if (index + 1 < recordedFrames.length) {
+    const waitMs = (recordedFrames[index + 1].time - frame.time) * 1000;
+    playbackTimer = setTimeout(function () {
+      playFrame(index + 1);
+    }, waitMs);
+  } else {
+    showStatus("Playback finished. Click Analyze to watch again, or Start set to record a new set.");
+  }
+}
+
+// Stops playback and goes back to the live camera
+function stopPlayback() {
+  clearTimeout(playbackTimer);
+  playback.classList.add("hidden");
+}
+
+// Draws one saved frame: the picture, colored lines, and angle labels
+function drawPlaybackFrame(frame) {
+  playbackDraw.drawImage(frame.picture, 0, 0, playback.width, playback.height);
+  drawSide(playbackDraw, frame, colorForLevel(frame.level));
+  drawLabel(frame.shoulder, "Trunk " + formatAngle(frame.trunkLean));
+  drawLabel(frame.hip, "Hip " + formatAngle(frame.hipAngle));
+  drawLabel(frame.knee, "Knee " + formatAngle(frame.kneeAngle));
+}
+
+// Picks the line color for "safe", "warning", or "danger" (blue if no level yet)
+function colorForLevel(level) {
+  if (level === "safe" || level === "warning" || level === "danger") {
+    return LEVEL_COLORS[level];
+  }
+  return NO_LEVEL_COLOR;
+}
+
+// Turns an angle into text like "92°" (or "--" if my function hasn't returned a number yet)
+function formatAngle(angle) {
+  if (typeof angle !== "number" || isNaN(angle)) {
+    return "--";
+  }
+  return Math.round(angle) + "°";
+}
+
+// Writes white text with a black outline just to the right of a joint
+function drawLabel(point, text) {
+  playbackDraw.font = "bold 34px sans-serif";
+  playbackDraw.lineWidth = 6;
+  playbackDraw.strokeStyle = "#000000";
+  playbackDraw.fillStyle = "#ffffff";
+  playbackDraw.strokeText(text, point.x + 18, point.y);
+  playbackDraw.fillText(text, point.x + 18, point.y);
+}
+
+// Shows what each line color means in the Results box
+function showLegend() {
+  resultsCard.classList.remove("hidden");
   resultsBox.innerHTML =
-    "<p>Saved <strong>" + recordedFrames.length + "</strong> frames " +
-    "(about " + (recordedFrames.length / seconds).toFixed(1) + " per second). " +
-    "Lift: " + liftSelect.value + ". Side: " + middle.side + ".</p>" +
-    "<img class='snapshot' src='" + middle.snapshot + "' alt='Middle of the set'>";
+    "<p><span class='dot safe'></span> Green: safe &nbsp; " +
+    "<span class='dot warning'></span> Yellow: warning &nbsp; " +
+    "<span class='dot danger'></span> Red: danger</p>" +
+    "<p class='muted'>Blue lines or \"--\" mean that part of my analysis code isn't written yet.</p>";
 }
