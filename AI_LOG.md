@@ -62,3 +62,8 @@ Legend:
 - **My decision:** put the camera beside the controls, in a tall (vertical) shape, so I don't have to scroll.
 - **Claude Code wrote:** two-column layout in `app.html` and `style.css` (CSS grid; stacks into one
   column on phones), and a 3:4 tall camera box that crops the wide webcam image with `object-fit: cover`.
+
+## Step (c) — angles.js (MY CODE)
+- **Claude Code wrote:** empty function stubs with comments (inputs/outputs) in `angles.js`,
+  the `<script>` tag that loads it, and explanations of the concepts and formulas.
+- **I wrote:** _(fill in as I write each function)_
