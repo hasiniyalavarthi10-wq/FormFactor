@@ -164,6 +164,7 @@ async function startCamera() {
   playback.width = video.videoWidth;
   playback.height = video.videoHeight;
   startCameraButton.disabled = true;
+  document.getElementById("camera-off").classList.add("hidden");  // remove the "Camera is off" text
 
   showStatus("Loading the pose model (can take about 10 seconds)...");
   const vision = await FilesetResolver.forVisionTasks(WASM_URL);

@@ -35,7 +35,9 @@ FormFactor gives an *angular risk estimate based on published biomechanics resea
 | `angles.js` | Turns joint positions into angles and angular velocity |
 | `risk.js` | Thresholds and the safe / warning / danger rules |
 | `methodology.html` | How it works, sources, limitations |
-| `style.css` | Styles |
+| `style.css` | Styles (colors, layout, phone and laptop sizes) |
+| `logo.svg` | Logo and browser-tab icon |
+| `VALIDATION.md` | Test against published research photos |
 | `AI_LOG.md` | Step-by-step record of what AI wrote and what I wrote |
 
 ## Run it on your computer

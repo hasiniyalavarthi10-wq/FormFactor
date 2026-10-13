@@ -173,3 +173,14 @@ Legend:
   could otherwise look like a fast forward lean); a 5-minute safety limit; smaller playback pictures
   (360 px wide) so 5 minutes fits in memory; faster smoothing so long recordings analyze quickly
   (a 5-minute test set analyzed in about 0.35 s); a guard so "Show worst moment" can't crash.
+
+## Design pass (my request: "finish the app design")
+- **Claude Code wrote:** a new home page (dark hero section with an illustration of the trunk/shin
+  angle lines, 3-step "How it works", "Built on research" cards including the 3/3 validation result,
+  privacy section), a logo (`logo.svg`), a dark top bar with the current page highlighted, a red Stop
+  button, outline-style secondary buttons, "Camera is off" text in the empty camera box, and restyled
+  results (notes in boxes, cleaner table).
+- **Bugs found and fixed while checking the design:** on phones the Analyze page scrolled sideways
+  (camera box sized by screen height); the `.hidden` rule came before `.app-layout` in the CSS, so the
+  recording screen didn't hide when results opened; the slide-in animation poked past the phone edge.
+  Checked all 3 pages at phone (375 px) and laptop (1366 px) sizes afterward: no sideways scrolling.
