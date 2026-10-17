@@ -211,3 +211,9 @@ Legend:
 - **Same features and same results:** tested on the same fake "tired lifter" set as before and got
   identical tips, averages, and rep table; math checks exact; recording, Stop trimming, worst moment,
   and the live depth bar all re-tested.
+
+## Removed the trunk − shin chart (my decision, to simplify)
+- **My decision:** remove the chart from the results to make the code simpler.
+- **Claude Code did:** removed the chart code (`drawChart`, `chartY`), its CSS, and the mentions on the
+  methodology page and README; simplified the countdown (no show/hide class needed). The "Which muscles
+  worked more?" text and per-rep table stay. Code is now 921 lines total (was 1,323 before simplifying).

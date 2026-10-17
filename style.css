@@ -184,15 +184,6 @@ input[type="file"] {
   object-fit: cover;
 }
 
-/* Snapshot image shown in the results */
-.snapshot {
-  width: 100%;
-  max-width: 480px;
-  border-radius: 8px;
-  display: block;
-  margin-top: 8px;
-}
-
 /* Big colored box with the overall result */
 .overall {
   color: #ffffff;
@@ -260,14 +251,6 @@ input[type="file"] {
   padding: 6px 8px;
   text-align: left;
   vertical-align: top;
-}
-
-/* Trunk-vs-shin chart in the results */
-.chart {
-  width: 100%;
-  height: auto;
-  border: 1px solid var(--border);
-  border-radius: 8px;
 }
 
 /* Small colored circles used in the results legend */

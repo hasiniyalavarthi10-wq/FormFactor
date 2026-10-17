@@ -104,14 +104,9 @@ function showDepthChoice() {
   }
 }
 
-// shows the big countdown number on the video ("" hides it)
+// shows the big countdown number on the video ("" makes it disappear)
 function showCountdown(text) {
   countdownText.textContent = text;
-  if (text === "") {
-    countdownText.classList.add("hidden");
-  } else {
-    countdownText.classList.remove("hidden");
-  }
 }
 
 
@@ -607,10 +602,8 @@ function showResults() {
     const average = total / reps.length;
 
     html = html + "<p>" + BIAS_TEXT[getBias(average)] + "</p>" +
-      "<canvas id='bias-chart' class='chart' width='600' height='220'></canvas>" +
-      "<p class='muted'>How it changed during your set. Dots = bottom of each rep. Gray = even. " +
-      "(Chest lean minus shin lean: " + formatAngle(average, true) + " on average. " +
-      "Based on Straub &amp; Powers, 2024. This is not a sign of injury.)</p>";
+      "<p class='muted'>(Chest lean minus shin lean: " + formatAngle(average, true) + " on average. " +
+      "Based on Straub &amp; Powers, 2024.)</p>";
   } else if (lift === "squat") {
     html = html + "<p class='muted'>No squat reps found.</p>";
   } else {
@@ -630,66 +623,6 @@ function showResults() {
     "An estimate from your body angles, based on published research.</p>";
 
   resultsBox.innerHTML = html;
-
-  // the chart can only be drawn after it's on the page
-  if (lift === "squat" && reps.length > 0) {
-    drawChart();
-  }
-}
-
-// line chart of trunk - shin over the whole set
-function drawChart() {
-  const chart = document.getElementById("bias-chart");
-  const pen = chart.getContext("2d");
-  const w = chart.width;
-  const h = chart.height;
-  const lastTime = frames[frames.length - 1].time;
-
-  // gray box for the "even" zone (between +10 and -10 degrees)
-  pen.fillStyle = "white";
-  pen.fillRect(0, 0, w, h);
-  pen.fillStyle = "#e8eaee";
-  pen.fillRect(50, chartY(LIMITS.biasRange, h), w - 60, chartY(-LIMITS.biasRange, h) - chartY(LIMITS.biasRange, h));
-
-  // labels
-  pen.fillStyle = "#5b6475";
-  pen.font = "12px sans-serif";
-  pen.fillText("More hips", 54, 20);
-  pen.fillText("Even", 54, h / 2 + 4);
-  pen.fillText("More knees", 54, h - 10);
-  pen.fillText("+40°", 4, 14);
-  pen.fillText("0°", 4, h / 2 + 4);
-  pen.fillText("-40°", 4, h - 4);
-
-  // the line
-  pen.strokeStyle = "#2364d2";
-  pen.lineWidth = 2;
-  pen.beginPath();
-  for (let i = 0; i < frames.length; i++) {
-    const x = 50 + (frames[i].time / lastTime) * (w - 60);
-    pen.lineTo(x, chartY(frames[i].difference, h));
-  }
-  pen.stroke();
-
-  // a dot at the bottom of each rep
-  pen.fillStyle = "#1d2330";
-  for (let i = 0; i < reps.length; i++) {
-    const x = 50 + (reps[i].time / lastTime) * (w - 60);
-    pen.beginPath();
-    pen.arc(x, chartY(reps[i].difference, h), 5, 0, 2 * Math.PI);
-    pen.fill();
-  }
-}
-
-// turns degrees into a height on the chart (+40 at the top, -40 at the bottom)
-function chartY(degrees, h) {
-  if (degrees > 40) {
-    degrees = 40;
-  }
-  if (degrees < -40) {
-    degrees = -40;
-  }
-  return h / 2 - (degrees / 40) * (h / 2 - 10);
 }
 
 // table with one row per rep
