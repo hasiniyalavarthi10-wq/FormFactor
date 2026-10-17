@@ -110,7 +110,6 @@ function showCountdown(text) {
 }
 
 
-// ---------- CAMERA ----------
 
 // turn on the camera, load MediaPipe, then start the loop
 async function startCamera() {
@@ -209,7 +208,6 @@ function toPixels(point) {
 }
 
 
-// ---------- DRAWING ----------
 
 function drawLine(canvas, start, end, color, width) {
   canvas.strokeStyle = color;
@@ -280,7 +278,7 @@ function drawAngles(canvas, joints, trunk, shin, color) {
   }
 
   // bottom bar
-  let text = "Trunk − Shin = " + formatAngle(trunk - shin, true);
+  let text = "Trunk - Shin = " + formatAngle(trunk - shin, true);
   if (liftSelect.value === "squat") {
     text = text + "  " + BIAS_NAME[getBias(trunk - shin)];
   }
@@ -298,7 +296,7 @@ function drawDepthBar(depth) {
 
   const size = textSize();
   if (depth >= goal) {
-    drawBar(draw, "✓ " + goalName + " reached", 0, size * 1.8, "rgba(0,160,70,0.85)");
+    drawBar(draw, goalName + " reached!", 0, size * 1.8, "rgba(0,160,70,0.85)");
   } else {
     drawBar(draw, "Depth " + formatAngle(depth, true) + "  (goal: " + goalName + ")", 0, size * 1.8, "rgba(0,0,0,0.6)");
   }
@@ -329,7 +327,6 @@ function smoothLive(list, angle) {
 }
 
 
-// ---------- RECORDING ----------
 
 // saves the time, the 4 joints, and a small picture for the playback
 function saveFrame(joints, now) {
@@ -422,7 +419,6 @@ function stopSet() {
 }
 
 
-// ---------- ANALYSIS ----------
 
 // works out the angles, speeds, and levels for every frame, then the reps
 function analyzeSet() {
@@ -485,7 +481,6 @@ function smooth(i, name) {
 }
 
 
-// ---------- RESULTS SCREEN ----------
 
 // "Analyze": do the math, switch screens, and play it back
 function openResults() {
@@ -635,7 +630,7 @@ function repTable() {
     "<tr><th>Rep</th><th>How deep</th><th>vs. 1st rep</th><th>Muscles</th></tr>";
 
   for (let i = 0; i < reps.length; i++) {
-    let change = "—";
+    let change = "-";
     let muscles = BIAS_NAME[getBias(reps[i].difference)];
 
     if (i > 0) {
@@ -660,6 +655,6 @@ function repTable() {
   }
 
   return html + "</table></div>" +
-    "<p class='muted'>How deep: 0° = thighs level with the floor, + = deeper, − = higher. " +
+    "<p class='muted'>How deep: 0° = thighs level with the floor, + = deeper, - = higher. " +
     "Each rep is compared to your first one. Yellow dot = big change.</p>";
 }

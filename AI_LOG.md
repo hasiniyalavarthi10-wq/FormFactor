@@ -217,3 +217,10 @@ Legend:
 - **Claude Code did:** removed the chart code (`drawChart`, `chartY`), its CSS, and the mentions on the
   methodology page and README; simplified the countdown (no show/hide class needed). The "Which muscles
   worked more?" text and per-rep table stay. Code is now 921 lines total (was 1,323 before simplifying).
+
+## Plainer look (my request: "make the layout look less AI")
+- **My decision:** the layout looked too much like a template; make it look more homemade.
+- **Claude Code did:** changed style.css to a plain look (white page, green title bar, Arial font,
+  sections separated by lines instead of rounded boxes, simple buttons, table with borders), shortened
+  the CSS comments, removed section banners from app.js, and replaced special characters (long dashes,
+  special minus sign, check mark) with normal ones. Checked all pages at phone and laptop size.
