@@ -181,3 +181,11 @@ Legend:
 - **Kept from it (Claude Code):** two phone-layout bug fixes that also affected the original design:
   the Analyze page no longer scrolls sideways on phones, and the results no longer poke past the
   screen edge while sliding in.
+
+## Change — Removed the "Not medical advice" boxes for now (my decision)
+- **My decision:** take the yellow "Not medical advice" disclaimer off the site for the CAC submission,
+  and add it back for the real public version after submitting.
+- **Claude Code did:** removed the disclaimer boxes from index.html, app.html, methodology.html and the
+  words "Not medical advice" from the results; kept "an estimate from your body angles" and the
+  honest-limitations section. Claude Code recommended keeping a small disclaimer.
+- **TODO (me):** add the disclaimer back after submission.

@@ -724,8 +724,7 @@ function showResults() {
 
   html = html +
     "<p class='muted'><span class='dot safe'></span> good &nbsp; <span class='dot warning'></span> watch this &nbsp; " +
-    "<span class='dot danger'></span> careful. An estimate from your body angles, based on published research. " +
-    "Not medical advice.</p>";
+    "<span class='dot danger'></span> careful. An estimate from your body angles, based on published research.</p>";
 
   resultsBox.innerHTML = html;
 
