@@ -21,6 +21,75 @@
     <h1>How FormFactor works</h1>
 
     <div class="card">
+      <h2>The research behind FormFactor</h2>
+
+      <h3>Keep a neutral spine under load</h3>
+      <p>
+        Stuart McGill's spine research strongly advises against rounding the lower back (spinal flexion)
+        under load. Rounding, especially at the L4-L5 and L5-S1 joints, puts large shear forces and stress
+        on the lumbar discs. Lifters should keep their natural lower-back curve through the whole lift, and
+        the squat should be hip-dominant: push the hips back and lean the chest forward just enough to use
+        the glutes and hamstrings, without leaning too far. [1, 2, 7, 8]
+      </p>
+
+      <h3>What spinal shear force is</h3>
+      <p>
+        Shear force happens when a force pushes along the spine, parallel to the discs, so neighboring
+        vertebrae try to slide past each other. It is mainly caused by leaning forward under load, rounding
+        the lower back, and twisting under load. Rounding under heavy load presses unevenly on the front of
+        the discs, while arching too far (hyperextension) jams the facet joints together. [7, 9]
+      </p>
+
+      <h3>Some spine movement is normal</h3>
+      <p>
+        Aasa and colleagues measured the lumbar spine during squats and deadlifts. Even when lifters tried
+        to keep a neutral spine, the spine still moved: about 9–12° in the upper lumbar spine and 18–22° in
+        the lower lumbar spine. That is far from full flexion (around 60–65°), so it is better to think of
+        a safe "neutral zone" than a spine that never moves. [3]
+      </p>
+
+      <h3>Trunk lean depends on your body</h3>
+      <p>
+        A healthy squat leans the torso forward. How much depends on leg proportions: lifters with longer
+        thigh bones need more forward lean to keep the bar over mid-foot, while shorter thigh bones allow a
+        more upright torso. A typical range is about 15°–45° of trunk lean from vertical. [5, 6, 11]
+        <!-- TODO: add the specific source for the 15-45 degree range -->
+      </p>
+
+      <h3>The real hazard: the back angle changing mid-lift</h3>
+      <p>
+        The danger comes when the back angle <strong>changes</strong> during the lift: the chest collapses
+        forward, or the hips shoot up out of the bottom of the squat. Then the load moves from the legs to
+        the spine. [6, 10] This is why FormFactor measures <strong>angular velocity</strong> (how fast an
+        angle changes, Δθ / Δt) and looks for two concerning patterns: <strong>sudden spikes</strong>, and
+        <strong>big differences between upper-body and lower-body movement</strong>. Warning levels are set
+        by comparing good lifts with poor-form lifts, with research as support.
+      </p>
+
+      <h3>Trunk vs. shin</h3>
+      <p>
+        Straub and Powers (2024) reviewed squat biomechanics and showed that comparing trunk lean to shin
+        lean tells you whether a squat works the hips or the knees more (see section 4 below). [4]
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>From research to app</h2>
+      <p>My research ranked what to measure. Here is how each one is used in FormFactor:</p>
+      <div class="table-wrap">
+        <table class="rep-table">
+          <tr><th>Priority</th><th>What is measured</th><th>How</th><th>What it detects</th></tr>
+          <tr><td>1</td><td>Trunk angle</td><td>Shoulder → hip line vs. a vertical line</td><td>Too much forward lean, "good morning" squats</td></tr>
+          <tr><td>2</td><td>Hip angle</td><td>Shoulder → hip → knee</td><td>How much the hips bend (hip hinge)</td></tr>
+          <tr><td>3</td><td>Knee angle</td><td>Hip → knee → ankle</td><td>Knee bend and squat depth</td></tr>
+          <tr><td>4</td><td>Trunk angular velocity</td><td>How fast the trunk angle changes (°/second)</td><td>Sudden torso movement and form breakdown</td></tr>
+          <tr><td>5</td><td>Hip vs. trunk speed</td><td>Compare how fast the hips and trunk move</td><td>Chest dropping too fast ("good morning" pattern)</td></tr>
+          <tr><td>6</td><td>Knee vs. hip speed</td><td>Compare knee straightening to hip straightening</td><td>Hips rising early, poor coordination</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>1. Finding the body</h2>
       <p>
         FormFactor uses Google's <strong>MediaPipe Pose Landmarker</strong> (the "full" model) to find
@@ -110,7 +179,7 @@
       <ul>
         <li><strong>One 2D camera can't see the lower back's curve.</strong> FormFactor sees a straight line from
             shoulder to hip. Someone can lean forward with a flat back, or round their back without that line
-            moving much. Studies measure lumbar motion of roughly 10°–22° in squats and deadlifts; FormFactor
+            moving much. Aasa et al. measured 9–22° of lumbar motion in squats and deadlifts [3]; FormFactor
             cannot measure this.</li>
         <li><strong>No forces.</strong> FormFactor does not know the weight on the bar, so it cannot measure
             force in Newtons. Results are angle-based estimates only.</li>
@@ -124,13 +193,41 @@
 
     <div class="card">
       <h2>Sources</h2>
-      <ul>
-        <li>McGill, S. <em>Low Back Disorders: Evidence-Based Prevention and Rehabilitation.</em> Human Kinetics.
-            (Neutral spine, spinal flexion, and shear loading.)</li>
-        <li>Straub, R. K., &amp; Powers, C. M. (2024). <em>A Biomechanical Review of the Squat Exercise.</em>
-            (Trunk vs. shin categories.) <!-- TODO: add journal and PMC link from my research --></li>
-        <li>Assa and colleagues: study of spinal motion during squats and deadlifts. <!-- TODO: add full citation and link --></li>
-      </ul>
+
+      <h3>Research papers and books</h3>
+      <ol>
+        <li>McGill, S. <em>Low Back Disorders: Evidence-Based Prevention and Rehabilitation.</em> Human Kinetics.</li>
+        <li>Myer, G. D., Kushner, A. M., Brent, J. L., Schoenfeld, B. J., Hugentobler, J., Lloyd, R. S., Vermeil, A.,
+            Chu, D. A., Harbin, J., &amp; McGill, S. M. (2014). The back squat: A proposed assessment of functional
+            deficits and technical factors that limit performance. <em>Strength and Conditioning Journal, 36</em>(6), 4–27.
+            <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4262933/">Link</a></li>
+        <li>Aasa, U., Bengtsson, V., Berglund, L., &amp; Öhberg, F. (2022). Variability of lumbar spinal alignment among
+            power- and weightlifters during the deadlift and barbell back squat. <em>Sports Biomechanics, 21</em>(6), 701–717.
+            <a href="https://pubmed.ncbi.nlm.nih.gov/31718474/">Link</a></li>
+        <li>Straub, R. K., &amp; Powers, C. M. (2024). A biomechanical review of the squat exercise: Implications for
+            clinical practice. <em>International Journal of Sports Physical Therapy, 19</em>(4), 490–501.
+            <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10987311/">Link</a></li>
+        <li>Stone, M. H., Hornsby, W. G., Mizuguchi, S., Sato, K., Gahreman, D., Duca, M., Carroll, K. M., Ramsey, M. W.,
+            Stone, M. E., Pierce, K. C., &amp; Haff, G. G. (2024). The use of free weight squats in sports: A narrative
+            review—terminology and biomechanics. <em>Applied Sciences, 14</em>(5), 1977.
+            <a href="https://www.mdpi.com/2076-3417/14/5/1977">Link</a></li>
+      </ol>
+
+      <h3>Coaching and physical therapy articles</h3>
+      <ol start="6">
+        <li>Starting Strength: The back angle in the squat.
+            <a href="https://startingstrength.com/training/the-back-angle-in-the-squat">Link</a></li>
+        <li>The Barbell Physio: Is weight lifting with a rounded back safe?
+            <a href="https://thebarbellphysio.com/is-weight-lifting-with-a-rounded-back-safe/">Link</a></li>
+        <li>Menno Henselmans: Is spinal flexion dangerous?
+            <a href="https://mennohenselmans.com/is-spinal-flexion-dangerous/">Link</a></li>
+        <li>Optimal: Forces on the spine: what your back has to deal with.
+            <a href="https://optimal.bio/forces-on-the-spine-what-your-back-has-to-deal-with/">Link</a></li>
+        <li>Squat University (2025): How to fix back pain: 7 science-backed steps.
+            <a href="https://squatuniversity.com/2025/02/13/how-to-fix-back-pain-7-science-backed-steps/">Link</a></li>
+        <li>BeFit Training Physio: Do genetics affect how you squat?
+            <a href="https://befittrainingphysio.com/do-genetics-affect-how-you-squat/">Link</a></li>
+      </ol>
     </div>
 
   </main>

@@ -189,3 +189,12 @@ Legend:
   words "Not medical advice" from the results; kept "an estimate from your body angles" and the
   honest-limitations section. Claude Code recommended keeping a small disclaimer.
 - **TODO (me):** add the disclaimer back after submission.
+
+## Methodology page — my research added
+- **I did:** the research in my PDF (McGill neutral spine and shear, causes of spinal shear, spine motion
+  in a "neutral zone", trunk lean and leg proportions, the hazard of the back angle changing mid-lift,
+  angular velocity risk logic, and my priority table of what to measure), with the source links.
+- **Claude Code did:** turned my research into two new sections on methodology.html ("The research behind
+  FormFactor" and "From research to app"), looked up full citations for the papers from my links
+  (PubMed/Crossref), and wrote the numbered Sources list. Caught that "Assa" should be **Aasa** et al. (2022).
+- **TODO (me):** find the specific source for the 15°–45° trunk-lean range.
