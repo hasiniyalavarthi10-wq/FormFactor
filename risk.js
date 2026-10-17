@@ -1,328 +1,192 @@
-// FormFactor - risk.js
-// Decides if form is safe, warning, or danger, based on the angles from angles.js.
+// risk.js
+// decides if each part of the lift is "safe", "warning", or "danger"
 //
-// Design decisions (mine):
-//   - Red (danger) only comes from the trunk angle CHANGING fast, because my research
-//     says the hazard is the back angle shifting mid-lift.
-//   - Trunk lean is only yellow (warning), because how much you lean depends on leg length.
-//   - We don't know each person's depth goal, so each squat rep is compared to the FIRST rep.
-//     Big changes during the set (like getting less deep) are yellow.
-//
-// (Logic written by Claude Code at my request. The 45° value comes from my research.
-//  I plan to review the logic and tune the other numbers with my own recorded lifts.)
+// how i decided the rules:
+// - red (danger) only happens when the chest drops forward FAST, because my research
+//   says the real danger is the back angle changing in the middle of the lift
+// - leaning a lot is only yellow, since how much you lean depends on how long your legs are
+// - we don't know everyone's depth goal, so each squat rep gets compared to the first rep
 
 
-// All the numbers the risk logic uses, in one place.
-const THRESHOLDS = {
-  // FROM MY RESEARCH (p.5): a safe trunk angle is 15° to 45° off vertical. Used for squats only.
-  trunkLeanWarning: 45,
+// all the numbers in one place
+const LIMITS = {
+  // from my research: safe trunk lean is about 15 to 45 degrees (squats only)
+  maxLean: 45,
 
-  // STARTING ESTIMATES, NOT FROM RESEARCH. Speeds in degrees per second.
-  // TODO: my research values. Tune by recording good lifts and bad lifts and comparing.
-  trunkDropWarning: 60,         // chest dropping forward this fast = warning (a normal 1-second descent is about 50)
-  trunkDropDanger: 100,         // chest dropping forward this fast = danger
-  kneeStraighteningSpeed: 30,   // knees straightening at least this fast = standing up
-  shearTrunkSpeed: 10,          // chest still dropping this fast WHILE knees straighten = hips rising first
+  // how fast the chest drops forward (degrees per second)
+  // starting guesses, i still need to test these with good and bad squats
+  fastDrop: 60,         // yellow
+  veryFastDrop: 100,    // red
 
-  // STARTING ESTIMATES: finding reps from the knee angle (degrees)
-  repStartKneeAngle: 140,       // knee bends past this = a rep has started
-  repEndKneeAngle: 160,         // knee straightens past this = back to standing
+  // "hips rose first": knees straightening while the chest still drops forward
+  kneesStraightening: 30,
+  chestStillDropping: 10,
 
-  // Depth goals for the LIVE feedback only (thigh angle in degrees: 0 = thigh level).
-  // Parallel = thigh level is the standard definition. The "deep" number is a STARTING ESTIMATE.
-  parallelThighAngle: 0,
-  deepThighAngle: 15,
+  // a rep starts when the knee bends past 140 and ends when it straightens past 160
+  repStart: 140,
+  repEnd: 160,
 
-  // STARTING ESTIMATES: comparing each rep to the first rep (degrees)
-  depthChangeWarning: 10,       // a rep this much less deep than rep 1 = warning
-  patternChangeWarning: 10,     // trunk-minus-shin this much different from rep 1 = warning
+  // depth goals for the live depth bar (thigh angle, 0 = parallel)
+  parallel: 0,
+  deep: 15,
 
-  // FROM RESEARCH (Straub & Powers, 2024): if trunk and shin angles differ by more than
-  // about 10°, the squat is hip-biased or knee-biased. Within 10° it is about balanced.
-  biasMargin: 10,
+  // how much a rep can change from rep 1 before it gets a yellow dot (degrees)
+  repChange: 10,
 
-  // MediaPipe's confidence (0 to 1) that it can see a joint. Below this, we don't trust the frame.
-  minVisibility: 0.5
+  // from Straub & Powers (2024): trunk and shin more than 10 degrees apart = hip or knee biased
+  biasRange: 10
 };
 
 
-// ======== ONE FRAME ========
-
-// Returns true if MediaPipe could clearly see all four joints in this frame
-function jointsVisible(frame) {
-  return frame.shoulder.visibility > THRESHOLDS.minVisibility
-      && frame.hip.visibility > THRESHOLDS.minVisibility
-      && frame.knee.visibility > THRESHOLDS.minVisibility
-      && frame.ankle.visibility > THRESHOLDS.minVisibility;
+// true if the knees are straightening but the chest is still dropping forward
+// (the hips shot up first, which puts the work on your lower back)
+function hipsRoseFirst(frame) {
+  return frame.kneeSpeed > LIMITS.kneesStraightening && frame.trunkSpeed > LIMITS.chestStillDropping;
 }
 
-// Returns true if the knees are straightening but the chest is still dropping forward.
-// This is the "hips shoot up first" / good-morning pattern that moves load onto the lower back.
-function isShearPattern(frame) {
-  return frame.kneeSpeed > THRESHOLDS.kneeStraighteningSpeed
-      && frame.trunkSpeed > THRESHOLDS.shearTrunkSpeed;
-}
 
-// Returns the risk level for ONE frame: "safe", "warning", "danger", or "unknown".
-// frame has: time, kneeAngle, hipAngle, trunkLean, trunkSpeed, kneeSpeed (and the joints)
-// trunkSpeed is positive when the chest is moving forward/down.
-// lift is "squat" or "deadlift".
-function frameRiskLevel(frame, lift) {
-  if (!jointsVisible(frame)) {
-    return "unknown";
-  }
-  if (frame.trunkSpeed > THRESHOLDS.trunkDropDanger) {
+// gives one frame a level: "safe", "warning", or "danger"
+function getLevel(frame, lift) {
+  if (frame.trunkSpeed > LIMITS.veryFastDrop) {
     return "danger";
   }
-  if (frame.trunkSpeed > THRESHOLDS.trunkDropWarning) {
+  if (frame.trunkSpeed > LIMITS.fastDrop) {
     return "warning";
   }
-  if (isShearPattern(frame)) {
+  if (hipsRoseFirst(frame)) {
     return "warning";
   }
-  if (lift === "squat" && frame.trunkLean > THRESHOLDS.trunkLeanWarning) {
+  if (lift === "squat" && frame.trunkLean > LIMITS.maxLean) {
     return "warning";
   }
   return "safe";
 }
 
 
-// ======== SQUAT REPS AND DEPTH ========
+// "hip-biased", "balanced", or "knee-biased" (Straub & Powers 2024)
+// difference = trunk lean - shin lean
+// this just shows which muscles did more work, it's not a danger thing
+function getBias(difference) {
+  if (difference > LIMITS.biasRange) {
+    return "hip-biased";
+  }
+  if (difference < -LIMITS.biasRange) {
+    return "knee-biased";
+  }
+  return "balanced";
+}
 
-// Finds the bottom of each squat rep.
-// A rep starts when the knee bends past repStartKneeAngle and ends when it straightens
-// past repEndKneeAngle. The bottom is the frame where the hip is lowest (biggest y).
-// Output: a list of frame numbers, one per rep. Example: [14, 52, 90] means 3 reps.
+
+// finds the bottom of each squat rep and returns their frame numbers, like [14, 52, 90]
 function findRepBottoms(frames) {
   const bottoms = [];
   let inRep = false;
   let lowest = 0;
 
   for (let i = 0; i < frames.length; i++) {
-    const angle = frames[i].kneeAngle;
+    const knee = frames[i].kneeAngle;
 
-    if (!inRep && angle < THRESHOLDS.repStartKneeAngle) {
+    // knee bent enough = rep started
+    if (!inRep && knee < LIMITS.repStart) {
       inRep = true;
       lowest = i;
     }
 
     if (inRep) {
+      // keep track of where the hip was lowest (bigger y = lower)
       if (frames[i].hip.y > frames[lowest].hip.y) {
         lowest = i;
       }
-      if (angle > THRESHOLDS.repEndKneeAngle) {
+      // knee straight again = rep done
+      if (knee > LIMITS.repEnd) {
         bottoms.push(lowest);
         inRep = false;
       }
     }
   }
 
-  // Count a rep that was still going when recording stopped
+  // if they were still in a rep when the recording stopped, count it too
   if (inRep) {
     bottoms.push(lowest);
   }
   return bottoms;
 }
 
-// Compares every rep to the FIRST rep. We don't know each person's depth goal,
-// so instead we look for changes during the set (for example, going less deep as you get tired).
-// Adds to each rep:
-//   rep.depthChange   = this rep's depth minus rep 1's depth (negative = less deep than rep 1)
-//   rep.patternChange = this rep's trunk-minus-shin minus rep 1's (positive = more trunk lean)
-function compareToFirstRep(repResults) {
-  if (repResults.length === 0) {
-    return;
-  }
-  const first = repResults[0];
-  for (let i = 0; i < repResults.length; i++) {
-    repResults[i].depthChange = repResults[i].depth - first.depth;
-    repResults[i].patternChange = repResults[i].difference - first.difference;
-  }
-}
 
-// Returns true if this rep was a lot less deep than rep 1
-function isLessDeep(rep) {
-  return rep.depthChange < -THRESHOLDS.depthChangeWarning;
-}
-
-// Returns true if this rep's trunk-vs-shin pattern changed a lot from rep 1
-function isPatternShift(rep) {
-  return Math.abs(rep.patternChange) > THRESHOLDS.patternChangeWarning;
+// true if a rep was a lot shallower than rep 1
+function lessDeep(rep) {
+  return rep.depthChange < -LIMITS.repChange;
 }
 
 
-// ======== WHOLE SET ========
-
-// Turns a level into a number so levels can be compared (bigger = worse)
-function levelRank(level) {
-  if (level === "danger") {
-    return 2;
-  }
-  if (level === "warning") {
-    return 1;
-  }
-  return 0;
+// true if a rep leaned a lot more (or less) than rep 1
+function leanChanged(rep) {
+  return Math.abs(rep.leanChange) > LIMITS.repChange;
 }
 
-// Returns the worst level of any frame: this is the lower-back load estimate
-function lowerBackLoad(frames) {
-  let worst = "safe";
-  for (let i = 0; i < frames.length; i++) {
-    if (levelRank(frames[i].level) > levelRank(worst)) {
-      worst = frames[i].level;
-    }
-  }
-  return worst;
-}
 
-// Returns the overall result for the set: the worst frame, and a warning if any rep
-// changed a lot compared to rep 1
-function overallLevel(frames, repResults) {
-  let overall = lowerBackLoad(frames);
-  for (let i = 0; i < repResults.length; i++) {
-    if ((isLessDeep(repResults[i]) || isPatternShift(repResults[i])) && overall === "safe") {
-      overall = "warning";
-    }
-  }
-  return overall;
-}
-
-// Returns the frame number of the worst moment: worst level first, then fastest chest drop.
-// Returns -1 if every frame was safe.
-function worstFrameIndex(frames) {
-  let worst = -1;
-  for (let i = 0; i < frames.length; i++) {
-    if (levelRank(frames[i].level) === 0) {
-      continue;
-    }
-    if (worst === -1) {
-      worst = i;
-    } else if (levelRank(frames[i].level) > levelRank(frames[worst].level)) {
-      worst = i;
-    } else if (levelRank(frames[i].level) === levelRank(frames[worst].level)
-            && frames[i].trunkSpeed > frames[worst].trunkSpeed) {
-      worst = i;
-    }
-  }
-  return worst;
-}
-
-// Returns the signed difference: trunk angle minus shin angle, in degrees.
-// Positive = trunk leans more than the shin. Negative = shin leans more than the trunk.
-function trunkShinDifference(frame) {
-  return frame.trunkLean - frame.shinAngle;
-}
-
-// Returns "hip-biased", "balanced", or "knee-biased" for a trunk-minus-shin difference.
-// Categories from Straub & Powers (2024), A Biomechanical Review of the Squat Exercise.
-// This describes hip vs. knee demand. It is NOT an injury risk or a form failure.
-function movementBias(difference) {
-  if (difference > THRESHOLDS.biasMargin) {
-    return "hip-biased";
-  }
-  if (difference < -THRESHOLDS.biasMargin) {
-    return "knee-biased";
-  }
-  return "balanced";
-}
-
-// Returns the average trunk-minus-shin difference at the bottom of the squat reps
-// (or NaN if there are no reps)
-function averageBottomDifference(frames, bottoms) {
-  if (bottoms.length === 0) {
-    return NaN;
-  }
-  let total = 0;
-  for (let i = 0; i < bottoms.length; i++) {
-    total = total + trunkShinDifference(frames[bottoms[i]]);
-  }
-  return total / bottoms.length;
-}
-
-// Turns seconds into a clock time like "0:03"
+// turns seconds into a time like "0:07"
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
-  const wholeSeconds = Math.floor(seconds % 60);
-  if (wholeSeconds < 10) {
-    return minutes + ":0" + wholeSeconds;
+  const secs = Math.floor(seconds % 60);
+  if (secs < 10) {
+    return minutes + ":0" + secs;
   }
-  return minutes + ":" + wholeSeconds;
+  return minutes + ":" + secs;
 }
 
-// Returns a list of plain-English messages about the set
-function buildFlags(frames, lift, repResults) {
-  const flags = [];
 
-  // 1. Fastest forward chest drop
-  let fastest = -1;
+// makes the list of tips shown in the results
+function makeTips(frames, lift, reps) {
+  const tips = [];
+
+  // find the frame where the chest dropped the fastest and the frame with the most lean
+  let fastest = 0;
+  let mostLean = 0;
   for (let i = 0; i < frames.length; i++) {
-    if (frames[i].level === "unknown") {
-      continue;
-    }
-    if (fastest === -1 || frames[i].trunkSpeed > frames[fastest].trunkSpeed) {
+    if (frames[i].trunkSpeed > frames[fastest].trunkSpeed) {
       fastest = i;
     }
+    if (frames[i].trunkLean > frames[mostLean].trunkLean) {
+      mostLean = i;
+    }
   }
-  if (fastest !== -1 && frames[fastest].trunkSpeed > THRESHOLDS.trunkDropWarning) {
-    flags.push("<strong>" + formatTime(frames[fastest].time) + "</strong>: Your chest dropped forward fast. " +
+
+  if (frames[fastest].trunkSpeed > LIMITS.fastDrop) {
+    tips.push("<b>" + formatTime(frames[fastest].time) + "</b>: Your chest dropped forward fast. " +
       "This strains your lower back. Try to keep your chest steady.");
   }
 
-  // 2. Shear force warning: hips rising before the chest
+  // only tell them about the first time their hips rose first
   for (let i = 0; i < frames.length; i++) {
-    if (frames[i].level !== "unknown" && isShearPattern(frames[i])) {
-      flags.push("<strong>" + formatTime(frames[i].time) + "</strong>: Your hips rose before your chest. " +
+    if (hipsRoseFirst(frames[i])) {
+      tips.push("<b>" + formatTime(frames[i].time) + "</b>: Your hips rose before your chest. " +
         "This moves the work from your legs to your lower back. Try to rise with chest and hips together.");
-      break;  // only report the first time
+      break;
     }
   }
 
-  // 3. Most forward lean (squats only)
-  if (lift === "squat") {
-    let mostLean = -1;
-    for (let i = 0; i < frames.length; i++) {
-      if (frames[i].level === "unknown") {
-        continue;
+  if (lift === "squat" && frames[mostLean].trunkLean > LIMITS.maxLean) {
+    tips.push("<b>" + formatTime(frames[mostLean].time) + "</b>: You leaned forward a lot (" +
+      Math.round(frames[mostLean].trunkLean) + "°). Some lean is normal, but less is easier on your back.");
+  }
+
+  // compare each rep to rep 1 (start at 1 because rep 1 is rep 1)
+  for (let i = 1; i < reps.length; i++) {
+    if (lessDeep(reps[i])) {
+      tips.push("<b>Rep " + (i + 1) + "</b>: Shallower than your first rep. You may be getting tired.");
+    }
+    if (leanChanged(reps[i])) {
+      if (reps[i].leanChange > 0) {
+        tips.push("<b>Rep " + (i + 1) + "</b>: You leaned forward more than in your first rep.");
+      } else {
+        tips.push("<b>Rep " + (i + 1) + "</b>: You leaned forward less than in your first rep.");
       }
-      if (mostLean === -1 || frames[i].trunkLean > frames[mostLean].trunkLean) {
-        mostLean = i;
-      }
-    }
-    if (mostLean !== -1 && frames[mostLean].trunkLean > THRESHOLDS.trunkLeanWarning) {
-      flags.push("<strong>" + formatTime(frames[mostLean].time) + "</strong>: You leaned forward a lot (" +
-        Math.round(frames[mostLean].trunkLean) + "°). Some lean is normal, but less is easier on your back.");
     }
   }
 
-  // 4. Reps that changed a lot compared to rep 1 (see the Rep-by-rep table)
-  for (let i = 1; i < repResults.length; i++) {
-    const rep = repResults[i];
-    if (isLessDeep(rep)) {
-      flags.push("<strong>Rep " + (i + 1) + "</strong>: Shallower than your first rep. You may be getting tired.");
-    }
-    if (isPatternShift(rep)) {
-      let leanWord = "more";
-      if (rep.patternChange < 0) {
-        leanWord = "less";
-      }
-      flags.push("<strong>Rep " + (i + 1) + "</strong>: You leaned forward " + leanWord + " than in your first rep.");
-    }
+  if (tips.length === 0) {
+    tips.push("No problems found. Nice work!");
   }
-
-  // 5. Frames where the body was hard to see
-  let unknownCount = 0;
-  for (let i = 0; i < frames.length; i++) {
-    if (frames[i].level === "unknown") {
-      unknownCount = unknownCount + 1;
-    }
-  }
-  if (unknownCount > frames.length * 0.3) {
-    flags.push("We couldn't see you clearly in " + Math.round(100 * unknownCount / frames.length) +
-      "% of the video, so results may be off. Try brighter light and keep your whole body in view.");
-  }
-
-  if (flags.length === 0) {
-    flags.push("No problems found. Nice work!");
-  }
-  return flags;
+  return tips;
 }

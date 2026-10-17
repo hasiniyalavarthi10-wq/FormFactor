@@ -198,3 +198,16 @@ Legend:
   FormFactor" and "From research to app"), looked up full citations for the papers from my links
   (PubMed/Crossref), and wrote the numbered Sources list. Caught that "Assa" should be **Aasa** et al. (2022).
 - **TODO (me):** find the specific source for the 15°–45° trunk-lean range.
+
+## Simplified all the code (my request: "humanize and simplify as much as possible")
+- **Claude Code rewrote** angles.js, risk.js, and app.js to be shorter and easier to read, with casual comments:
+  - angles.js: `trunkLeanAngle` + `shinAngle` became one `leanAngle(top, bottom)`; removed the extra
+    `kneeAngle` wrapper; `angularVelocity` is now `angleSpeed`.
+  - risk.js: `THRESHOLDS` is now `LIMITS`; removed the "unknown" visibility system (frames where the body
+    isn't clearly visible just aren't saved); simpler tips function (`makeTips`).
+  - app.js: smoothing now averages the 3 frames on each side; speeds compare to 6 frames earlier;
+    one `drawText` and one `drawBar` instead of several drawing functions; overall/worst-moment logic
+    moved into `showResults`.
+- **Same features and same results:** tested on the same fake "tired lifter" set as before and got
+  identical tips, averages, and rep table; math checks exact; recording, Stop trimming, worst moment,
+  and the live depth bar all re-tested.

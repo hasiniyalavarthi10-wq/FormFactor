@@ -3,7 +3,7 @@
 **Date:** 2026-10-13
 
 **What we tested:** FormFactor's own pose detection (MediaPipe Pose Landmarker, full model) and angle
-code (`trunkLeanAngle`, `shinAngle`, `movementBias`) on the three example squat photos in
+code (`leanAngle`, `getBias`) on the three example squat photos in
 **Figure 5 (trunk–tibia angle)** of Straub & Powers (2024), *A Biomechanical Review of the Squat Exercise*.
 The paper's angles were measured by the authors and printed on the photos.
 
