@@ -224,3 +224,8 @@ Legend:
   sections separated by lines instead of rounded boxes, simple buttons, table with borders), shortened
   the CSS comments, removed section banners from app.js, and replaced special characters (long dashes,
   special minus sign, check mark) with normal ones. Checked all pages at phone and laptop size.
+
+## Simpler methodology page (my request)
+- **My decision:** the methodology page needed to be way simpler.
+- **Claude Code did:** rewrote it as 4 short sections (Finding your body, What the research says,
+  How it decides, Limits) plus a shorter sources list (7 sources), in plain language.
