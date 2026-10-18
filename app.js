@@ -75,7 +75,6 @@ let playbackTimer = null;
 let isRecording = false;
 let startTime = 0;
 let frames = [];       // everything we saved while recording, one item per frame
-let reps = [];         // one item per squat rep
 let worstIndex = -1;   // frame number of the worst moment (-1 means there wasn't one)
 let liveTrunk = [];    // last few live angles, used to stop the numbers from flickering
 let liveShin = [];
@@ -420,7 +419,7 @@ function stopSet() {
 
 
 
-// works out the angles, speeds, and levels for every frame, then the reps
+// works out the angles, speeds, and levels for every frame
 function analyzeSet() {
   const lift = liftSelect.value;
 
@@ -449,20 +448,6 @@ function analyzeSet() {
     f.kneeSpeed = angleSpeed(before.kneeAngle, f.kneeAngle, before.time, f.time);
     f.difference = f.trunkLean - f.shinAngle;
     f.level = getLevel(f, lift);
-  }
-
-  // 4. squats: look at the bottom of each rep and compare it to rep 1
-  reps = [];
-  if (lift === "squat") {
-    const bottoms = findRepBottoms(frames);
-    for (let i = 0; i < bottoms.length; i++) {
-      const f = frames[bottoms[i]];
-      reps.push({ time: f.time, depth: thighAngle(f.hip, f.knee), difference: f.difference });
-    }
-    for (let i = 0; i < reps.length; i++) {
-      reps[i].depthChange = reps[i].depth - reps[0].depth;
-      reps[i].leanChange = reps[i].difference - reps[0].difference;
-    }
   }
 }
 
@@ -552,14 +537,6 @@ function showResults() {
     }
   }
 
-  // overall = lower back, but also yellow if a rep changed a lot from rep 1
-  let overall = back;
-  for (let i = 1; i < reps.length; i++) {
-    if ((lessDeep(reps[i]) || leanChanged(reps[i])) && overall === "safe") {
-      overall = "warning";
-    }
-  }
-
   // worst moment = the flagged frame where the chest moved fastest
   worstIndex = -1;
   for (let i = 0; i < frames.length; i++) {
@@ -578,9 +555,9 @@ function showResults() {
   }
 
   // build the html
-  let html = "<div class='overall " + overall + "'>" + OVERALL_TEXT[overall] + "</div>";
+  let html = "<div class='overall " + back + "'>" + OVERALL_TEXT[back] + "</div>";
 
-  const tips = makeTips(frames, lift, reps);
+  const tips = makeTips(frames, lift);
   html = html + "<ul class='flags'>";
   for (let i = 0; i < tips.length; i++) {
     html = html + "<li>" + tips[i] + "</li>";
@@ -588,19 +565,19 @@ function showResults() {
   html = html + "</ul>";
 
   html = html + "<h3>Which muscles worked more?</h3>";
-  if (lift === "squat" && reps.length > 0) {
-    // average trunk - shin at the bottom of the reps
-    let total = 0;
-    for (let i = 0; i < reps.length; i++) {
-      total = total + reps[i].difference;
+  if (lift === "squat") {
+    // look at the deepest point of the set (where the hip is lowest, bigger y = lower)
+    let deepest = 0;
+    for (let i = 0; i < frames.length; i++) {
+      if (frames[i].hip.y > frames[deepest].hip.y) {
+        deepest = i;
+      }
     }
-    const average = total / reps.length;
+    const difference = frames[deepest].difference;
 
-    html = html + "<p>" + BIAS_TEXT[getBias(average)] + "</p>" +
-      "<p class='muted'>(Chest lean minus shin lean: " + formatAngle(average, true) + " on average. " +
-      "Based on Straub &amp; Powers, 2024.)</p>";
-  } else if (lift === "squat") {
-    html = html + "<p class='muted'>No squat reps found.</p>";
+    html = html + "<p>" + BIAS_TEXT[getBias(difference)] + "</p>" +
+      "<p class='muted'>(Chest lean minus shin lean at your deepest point: " + formatAngle(difference, true) +
+      ". Based on Straub &amp; Powers, 2024.)</p>";
   } else {
     html = html + "<p class='muted'>Only shown for squats.</p>";
   }
@@ -609,52 +586,9 @@ function showResults() {
     "<p><span class='dot " + back + "'></span> <b>" + BACK_TEXT[back] + "</b>" +
     " <span class='muted'>(from how fast your chest moved)</span></p>";
 
-  if (lift === "squat") {
-    html = html + "<h3>Rep by rep</h3>" + repTable();
-  }
-
   html = html + "<p class='muted'><span class='dot safe'></span> good &nbsp; " +
     "<span class='dot warning'></span> watch this &nbsp; <span class='dot danger'></span> careful. " +
     "An estimate from your body angles, based on published research.</p>";
 
   resultsBox.innerHTML = html;
-}
-
-// table with one row per rep
-function repTable() {
-  if (reps.length === 0) {
-    return "<p class='muted'>No reps found. Make sure your knees bend a good amount on each rep.</p>";
-  }
-
-  let html = "<div class='table-wrap'><table class='rep-table'>" +
-    "<tr><th>Rep</th><th>How deep</th><th>vs. 1st rep</th><th>Muscles</th></tr>";
-
-  for (let i = 0; i < reps.length; i++) {
-    let change = "-";
-    let muscles = BIAS_NAME[getBias(reps[i].difference)];
-
-    if (i > 0) {
-      if (Math.abs(reps[i].depthChange) < 2) {
-        change = "same";
-      } else if (reps[i].depthChange < 0) {
-        change = Math.round(-reps[i].depthChange) + "° shallower";
-      } else {
-        change = Math.round(reps[i].depthChange) + "° deeper";
-      }
-      // yellow dot if it changed a lot
-      if (lessDeep(reps[i])) {
-        change = "<span class='dot warning'></span> " + change;
-      }
-      if (leanChanged(reps[i])) {
-        muscles = "<span class='dot warning'></span> " + muscles;
-      }
-    }
-
-    html = html + "<tr><td>" + (i + 1) + "</td><td>" + formatAngle(reps[i].depth, true) + "</td><td>" +
-      change + "</td><td>" + muscles + "</td></tr>";
-  }
-
-  return html + "</table></div>" +
-    "<p class='muted'>How deep: 0° = thighs level with the floor, + = deeper, - = higher. " +
-    "Each rep is compared to your first one. Yellow dot = big change.</p>";
 }

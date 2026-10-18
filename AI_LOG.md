@@ -229,3 +229,9 @@ Legend:
 - **My decision:** the methodology page needed to be way simpler.
 - **Claude Code did:** rewrote it as 4 short sections (Finding your body, What the research says,
   How it decides, Limits) plus a shorter sources list (7 sources), in plain language.
+
+## Removed the rep-by-rep comparison (my decision, to cut code)
+- **My decision:** remove finding reps and comparing each rep to rep 1, to make the code smaller.
+- **Claude Code did:** removed `findRepBottoms`, the rep comparison, the rep table and its CSS, and the
+  mentions on the methodology page and README. "Which muscles worked more" now uses the deepest point of
+  the set. Code is now 780 lines total (was 1,323 before simplifying).

@@ -217,26 +217,6 @@ select {
   justify-content: center;
 }
 
-.table-wrap {
-  overflow-x: auto;
-}
-
-.rep-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.rep-table th,
-.rep-table td {
-  border: 1px solid var(--line);
-  padding: 6px 8px;
-  text-align: left;
-}
-
-.rep-table th {
-  background: #eeeeee;
-}
-
 /* little colored circles */
 .dot {
   display: inline-block;

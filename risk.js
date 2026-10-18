@@ -5,7 +5,6 @@
 // - red (danger) only happens when the chest drops forward FAST, because my research
 //   says the real danger is the back angle changing in the middle of the lift
 // - leaning a lot is only yellow, since how much you lean depends on how long your legs are
-// - we don't know everyone's depth goal, so each squat rep gets compared to the first rep
 
 
 // all the numbers in one place
@@ -22,16 +21,9 @@ const LIMITS = {
   kneesStraightening: 30,
   chestStillDropping: 10,
 
-  // a rep starts when the knee bends past 140 and ends when it straightens past 160
-  repStart: 140,
-  repEnd: 160,
-
   // depth goals for the live depth bar (thigh angle, 0 = parallel)
   parallel: 0,
   deep: 15,
-
-  // how much a rep can change from rep 1 before it gets a yellow dot (degrees)
-  repChange: 10,
 
   // from Straub & Powers (2024): trunk and shin more than 10 degrees apart = hip or knee biased
   biasRange: 10
@@ -77,54 +69,6 @@ function getBias(difference) {
 }
 
 
-// finds the bottom of each squat rep and returns their frame numbers, like [14, 52, 90]
-function findRepBottoms(frames) {
-  const bottoms = [];
-  let inRep = false;
-  let lowest = 0;
-
-  for (let i = 0; i < frames.length; i++) {
-    const knee = frames[i].kneeAngle;
-
-    // knee bent enough = rep started
-    if (!inRep && knee < LIMITS.repStart) {
-      inRep = true;
-      lowest = i;
-    }
-
-    if (inRep) {
-      // keep track of where the hip was lowest (bigger y = lower)
-      if (frames[i].hip.y > frames[lowest].hip.y) {
-        lowest = i;
-      }
-      // knee straight again = rep done
-      if (knee > LIMITS.repEnd) {
-        bottoms.push(lowest);
-        inRep = false;
-      }
-    }
-  }
-
-  // if they were still in a rep when the recording stopped, count it too
-  if (inRep) {
-    bottoms.push(lowest);
-  }
-  return bottoms;
-}
-
-
-// true if a rep was a lot shallower than rep 1
-function lessDeep(rep) {
-  return rep.depthChange < -LIMITS.repChange;
-}
-
-
-// true if a rep leaned a lot more (or less) than rep 1
-function leanChanged(rep) {
-  return Math.abs(rep.leanChange) > LIMITS.repChange;
-}
-
-
 // turns seconds into a time like "0:07"
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
@@ -137,7 +81,7 @@ function formatTime(seconds) {
 
 
 // makes the list of tips shown in the results
-function makeTips(frames, lift, reps) {
+function makeTips(frames, lift) {
   const tips = [];
 
   // find the frame where the chest dropped the fastest and the frame with the most lean
@@ -169,20 +113,6 @@ function makeTips(frames, lift, reps) {
   if (lift === "squat" && frames[mostLean].trunkLean > LIMITS.maxLean) {
     tips.push("<b>" + formatTime(frames[mostLean].time) + "</b>: You leaned forward a lot (" +
       Math.round(frames[mostLean].trunkLean) + "°). Some lean is normal, but less is easier on your back.");
-  }
-
-  // compare each rep to rep 1 (start at 1 because rep 1 is rep 1)
-  for (let i = 1; i < reps.length; i++) {
-    if (lessDeep(reps[i])) {
-      tips.push("<b>Rep " + (i + 1) + "</b>: Shallower than your first rep. You may be getting tired.");
-    }
-    if (leanChanged(reps[i])) {
-      if (reps[i].leanChange > 0) {
-        tips.push("<b>Rep " + (i + 1) + "</b>: You leaned forward more than in your first rep.");
-      } else {
-        tips.push("<b>Rep " + (i + 1) + "</b>: You leaned forward less than in your first rep.");
-      }
-    }
   }
 
   if (tips.length === 0) {
