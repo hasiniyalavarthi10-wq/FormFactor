@@ -1,4 +1,4 @@
-// risk.js
+// form-rules.js
 // decides if each part of the lift is "safe", "warning", or "danger"
 //
 // how i decided the rules:

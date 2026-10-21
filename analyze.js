@@ -1,6 +1,6 @@
-// app.js
+// analyze.js
 // runs the Analyze page: camera, skeleton, recording, playback, and results
-// uses the math from angles.js and the rules from risk.js
+// uses the math from angle-math.js and the rules from form-rules.js
 
 // MediaPipe finds the body points for us (from a CDN, version locked so it doesn't change)
 import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";

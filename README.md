@@ -18,7 +18,7 @@ Everything runs in the browser. **The camera video never leaves your device.**
 
 FormFactor gives an *angular risk estimate based on published biomechanics research*. It is
 **not medical advice** and does not measure force or spinal flexion directly. See
-[methodology.html](methodology.html) for how it works and its limitations.
+[how-it-works.html](how-it-works.html) for how it works and its limitations.
 
 ## Built with
 
@@ -31,10 +31,10 @@ FormFactor gives an *angular risk estimate based on published biomechanics resea
 | File | What it does |
 |---|---|
 | `index.html` | Landing page |
-| `app.html` / `app.js` | The tool: camera, skeleton, recording, playback, results screen |
-| `angles.js` | Turns joint positions into angles and angular velocity |
-| `risk.js` | Thresholds and the safe / warning / danger rules |
-| `methodology.html` | How it works, sources, limitations |
+| `analyze.html` / `analyze.js` | The tool: camera, skeleton, recording, playback, results screen |
+| `angle-math.js` | Turns joint positions into angles and angular velocity |
+| `form-rules.js` | Thresholds and the safe / warning / danger rules |
+| `how-it-works.html` | How it works, sources, limitations |
 | `style.css` | Styles |
 | `AI_LOG.md` | Step-by-step record of what AI wrote and what I wrote |
 
@@ -77,6 +77,6 @@ A full step-by-step record is in [AI_LOG.md](AI_LOG.md).
   user-chosen squat depth goal instead of one fixed angle, side-by-side layout); tested the app and
   found bugs; _(add what you tune, rewrite, or change)_.
 - **What Claude Code wrote:** the HTML/CSS pages, the camera and MediaPipe code, the skeleton drawing,
-  recording and playback, the results screen, and, at my request, the code in `angles.js` and `risk.js`
+  recording and playback, the results screen, and, at my request, the code in `angle-math.js` and `form-rules.js`
   based on my research and design decisions.
 - **What I changed afterward:** _(fill in)_
