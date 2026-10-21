@@ -1,7 +1,7 @@
 // form-rules.js
 // decides if each part of the lift is "safe", "warning", or "danger"
 //
-// how i decided the rules:
+// how the rules work:
 // - red (danger) only happens when the chest drops forward FAST, because my research
 //   says the real danger is the back angle changing in the middle of the lift
 // - leaning a lot is only yellow, since how much you lean depends on how long your legs are

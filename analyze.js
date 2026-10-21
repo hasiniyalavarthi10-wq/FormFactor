@@ -1,8 +1,7 @@
 // analyze.js
-// runs the Analyze page: camera, skeleton, recording, playback, and results
-// uses the math from angle-math.js and the rules from form-rules.js
+// everything on the analyze page (camera, lines, recording, playback, results)
 
-// MediaPipe finds the body points for us (from a CDN, version locked so it doesn't change)
+// MediaPipe finds the body points for us
 import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
 
 const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
@@ -201,7 +200,7 @@ function getJoints(points) {
 
 
 // MediaPipe gives x and y from 0 to 1, so change them into pixels
-// (this matters, otherwise the angles come out wrong because the picture is wider than tall)
+// (if you skip this the angles are wrong since the picture is wider than it is tall)
 function toPixels(point) {
   return { x: point.x * video.videoWidth, y: point.y * video.videoHeight };
 }
@@ -249,9 +248,7 @@ function drawBody(points) {
   }
 }
 
-// draws the trunk and shin like the picture in the Straub & Powers paper:
-// colored trunk and shin lines, white straight-up lines, the angle numbers,
-// and "Trunk - Shin" at the bottom
+// draws the trunk and shin lines like the picture in the Straub & Powers paper
 function drawAngles(canvas, joints, trunk, shin, color) {
   drawLine(canvas, joints.hip, joints.knee, color, 4);
   drawLine(canvas, joints.hip, joints.shoulder, color, 8);
@@ -491,7 +488,7 @@ function replay() {
   playFrame(0);
 }
 
-// shows one frame, then waits the same amount of time as the real video before the next one
+// shows one frame, then waits until it's time for the next one
 function playFrame(i) {
   drawPlaybackFrame(frames[i]);
   playbackStatus.textContent = "Playback: " + formatTime(frames[i].time);

@@ -12,19 +12,16 @@
     <div class="container">
       <a class="logo" href="index.html">FormFactor</a>
       <a href="analyze.html">Analyze</a>
-      <a href="how-it-works.html">Methodology</a>
+      <a href="how-it-works.html">How it works</a>
     </div>
   </nav>
 
   <main class="container wide">
 
-    <!-- ===== RECORDING SCREEN =====
-         Two columns on a computer: controls on the left, camera on the right -->
+    <!-- recording screen -->
     <div class="app-layout" id="record-view">
 
-      <!-- LEFT COLUMN -->
       <div>
-        <!-- Controls -->
         <div class="card">
           <h1>Analyze your lift</h1>
           <p>
@@ -37,7 +34,7 @@
             <option value="deadlift">Deadlift</option>
           </select>
 
-          <!-- Only shown for squats. Used for live feedback on the camera, not in the results. -->
+          <!-- only for squats -->
           <div id="depth-choice">
             <label for="depth-goal">Depth goal (live feedback)</label>
             <select id="depth-goal">
@@ -57,33 +54,30 @@
           <p class="status" id="status">Camera is off.</p>
         </div>
 
-        <!-- Camera setup tips -->
         <div class="card">
           <h2>Set up your camera</h2>
           <ul>
-            <li>Stand <strong>sideways</strong> to the camera, about 2.5–3 meters (8–10 feet) away.</li>
+            <li>Stand <strong>sideways</strong> to the camera, about 8-10 feet away.</li>
             <li>Put the camera at about hip height (a laptop on a chair or box works).</li>
-            <li>Your whole body, head to feet, must stay in the picture the whole set.</li>
-            <li>Use bright, even lighting. Avoid a bright window behind you.</li>
+            <li>Make sure your whole body is in the picture.</li>
+            <li>Good lighting helps. Don't stand in front of a window.</li>
           </ul>
         </div>
       </div>
 
-      <!-- RIGHT COLUMN: the camera (black until it's turned on) -->
+      <!-- camera -->
       <div class="video-box sticky">
         <video id="video" playsinline muted></video>
-        <!-- The skeleton is drawn on this transparent canvas, on top of the video -->
+        <!-- the lines get drawn on this, on top of the video -->
         <canvas id="overlay"></canvas>
         <div class="countdown" id="countdown"></div>
       </div>
 
     </div>
 
-    <!-- ===== RESULTS SCREEN (shown after clicking Analyze) =====
-         Two columns on a computer: playback on the left, analysis on the right -->
+    <!-- results screen (shows up after you click Analyze) -->
     <div class="app-layout results-layout hidden" id="results-view">
 
-      <!-- LEFT COLUMN: playback of the recorded set, with its buttons (they stay on screen together) -->
       <div class="sticky">
         <div class="video-box">
           <canvas id="playback"></canvas>
@@ -96,7 +90,6 @@
         <p class="status" id="playback-status"></p>
       </div>
 
-      <!-- RIGHT COLUMN: the analysis (slides in) -->
       <div class="card slide-in" id="results-card">
         <h1>Results</h1>
         <div id="results"></div>
@@ -110,11 +103,10 @@
     FormFactor | <a href="how-it-works.html">How it works</a>
   </footer>
 
-  <!-- My angle math. Loaded first so analyze.js can use its functions. -->
+  <!-- these 2 have to load first because analyze.js uses them -->
   <script src="angle-math.js"></script>
-  <!-- My risk logic. Also loaded before analyze.js. -->
   <script src="form-rules.js"></script>
-  <!-- type="module" lets analyze.js import MediaPipe from a CDN -->
+  <!-- "module" so it can import MediaPipe -->
   <script type="module" src="analyze.js"></script>
 </body>
 </html>
