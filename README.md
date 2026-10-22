@@ -36,7 +36,6 @@ FormFactor gives an *angular risk estimate based on published biomechanics resea
 | `form-rules.js` | Thresholds and the safe / warning / danger rules |
 | `how-it-works.html` | How it works, sources, limitations |
 | `style.css` | Styles |
-| `AI_LOG.md` | Step-by-step record of what AI wrote and what I wrote |
 
 ## Run it on your computer
 
@@ -69,7 +68,6 @@ GitHub Pages uses https, so the camera works there.
 _(Edit this section in your own words before submitting.)_
 
 I used **Claude Code** (an AI coding assistant made by Anthropic) while building FormFactor.
-A full step-by-step record is in [AI_LOG.md](AI_LOG.md).
 
 - **What I did:** came up with the idea and the problem it solves; did the biomechanics research
   (McGill's spine work, squat biomechanics, safe trunk-angle range of 15°–45°); chose the 45° trunk-lean
