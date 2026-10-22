@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FormFactor - How it works</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -35,41 +35,36 @@
     </section>
 
     <section class="band light">
-      <div class="container">
-        <h2>What the research says</h2>
-      <ul>
-        <li>Rounding your lower back while lifting puts a lot of stress on your spinal discs. [1, 2]</li>
-        <li>A little back movement is normal, about 9-22° in the lower back. [3]</li>
-        <li>How much you lean forward depends on your leg length. About 15-45° is typical. [5, 6]</li>
-        <!-- TODO: find the exact source for 15-45 -->
-        <li>The real danger is your back angle changing fast in the middle of a lift. [6, 7]</li>
-        <li>Comparing how much your trunk and shins lean shows if your hips or knees did more of the work. [4]</li>
-      </ul>
+      <div class="container wide two-columns">
+
+        <!-- left side: the guide -->
+        <div>
+          <h2>Guide to use</h2>
+          <ul class="big-list">
+            <li><b class="red">Red:</b> your chest drops forward really fast.</li>
+            <li><b class="yellow">Yellow:</b> your hips rise before your chest, or you lean more than 45°.</li>
+            <li><b class="green-text">Green:</b> none of those happened- good form!</li>
+          </ul>
+          <p class="big-text">
+            <b>Which muscles worked more:</b> trunk lean minus shin lean at your deepest point. More than +10°
+            means your hips did more work, less than -10° means your knees did, and in between is even.
+          </p>
+        </div>
+
+        <!-- right side: the trunk-tibia picture from Straub & Powers (2024) -->
+        <div class="figure-box">
+          <img src="figure5.png" alt="Three squats showing trunk-tibia angles of 18, -16, and 9 degrees">
+          <p class="figure-caption">
+            A. Hip extensor bias with trunk-tibia angle &gt; 10°; (B) Knee extensor bias with trunk-tibia angle &lt;
+            -10°; (C) Neutral bias with -10° &le; trunk-tibia angle &le; 10°.
+          </p>
+          <p class="figure-caption">From Straub &amp; Powers (2024) [4].</p>
+        </div>
+
       </div>
     </section>
 
     <section class="band green">
-      <div class="container">
-        <h2>How it decides</h2>
-      <ul>
-        <li><b class="red">Red:</b> your chest drops forward really fast.</li>
-        <li><b class="yellow">Yellow:</b> your hips rise before your chest, or you lean more
-            than 45° (squats).</li>
-        <li><b class="green-text">Green:</b> none of those happened.</li>
-      </ul>
-      <p>
-        <b>Which muscles worked more</b> uses the <b>trunk-tibia angle</b>: your trunk lean minus your shin
-        (tibia) lean, at your deepest point. [4]
-      </p>
-      <ul>
-        <li><b>Hip bias:</b> more than +10°. Your hips and glutes did more of the work.</li>
-        <li><b>Knee bias:</b> less than -10°. Your knees and quads did more of the work.</li>
-        <li><b>Neutral:</b> between -10° and +10°. Your hips and knees shared the work.</li>
-      </ul>
-      </div>
-    </section>
-
-    <section class="band light">
       <div class="container">
         <h2>Limits</h2>
       <ul>
@@ -81,7 +76,7 @@
       </div>
     </section>
 
-    <section class="band green">
+    <section class="band light">
       <div class="container">
         <h2>Sources</h2>
       <ol>

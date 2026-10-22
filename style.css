@@ -132,6 +132,48 @@ a {
   color: var(--gray);
 }
 
+/* text on the left, picture on the right (stacks on phones) */
+.two-columns {
+  display: grid;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (min-width: 800px) {
+  .two-columns {
+    grid-template-columns: 1fr 1.3fr;
+  }
+}
+
+.big-list {
+  list-style: square;
+}
+
+.big-list li,
+.big-text {
+  font-family: Bitter, Georgia, serif;
+  font-weight: 400;
+  font-size: 1.25rem;
+  margin-bottom: 14px;
+}
+
+/* cream box around the research picture */
+.figure-box {
+  background: #fffcf0;
+  padding: 0 0 12px;
+}
+
+.figure-box img {
+  width: 100%;
+  display: block;
+}
+
+.figure-caption {
+  font-family: Georgia, serif;
+  font-size: 0.85rem;
+  margin: 8px 16px 0;
+}
+
 /* Red: / Yellow: / Green: labels */
 .red {
   color: var(--danger);
