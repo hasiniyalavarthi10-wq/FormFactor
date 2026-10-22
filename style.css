@@ -1,13 +1,18 @@
 /* style.css - styles for all the pages */
+/* colors and fonts match our Google Site */
 
 :root {
-  --main: #000080;      /* navy blue */
-  --text: #222222;
-  --gray: #666666;
+  --green: #80bd8c;     /* sage green sections */
+  --light: #f2f2f2;     /* light gray sections */
+  --dark: #212121;      /* top bar and headings */
+  --button: #38761d;    /* dark green buttons */
+  --link: #1e6c93;
+  --text: #212121;
+  --gray: #555555;
   --line: #cccccc;
-  --safe: #1e8e3e;
-  --warning: #c98a00;
-  --danger: #c5221f;
+  --safe: #38761d;
+  --warning: #f1c232;
+  --danger: #ff0000;
 }
 
 * {
@@ -16,9 +21,9 @@
 
 body {
   margin: 0;
-  font-family: "Times New Roman", Times, serif;
-  line-height: 1.5;
-  background: white;
+  font-family: Lato, Arial, sans-serif;
+  line-height: 1.6;
+  background: var(--light);
   color: var(--text);
 }
 
@@ -28,9 +33,9 @@ body {
   padding: 16px;
 }
 
-/* navy bar at the top */
+/* dark bar at the top */
 nav {
-  background: var(--main);
+  background: var(--dark);
 }
 
 nav .container {
@@ -42,45 +47,107 @@ nav .container {
 
 nav a {
   color: white;
-}
-
-nav .logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-right: auto;
   text-decoration: none;
 }
 
-/* each section is separated by a line */
+nav .logo {
+  font-size: 1.3rem;
+  margin-right: auto;
+}
+
+/* big green banner with the title */
+.banner {
+  background: var(--green);
+  text-align: center;
+  padding: 60px 16px;
+  border-bottom: 4px solid white;
+}
+
+.banner h1 {
+  font-size: 4rem;
+  margin: 0;
+}
+
+.banner p {
+  max-width: 640px;
+  margin: 12px auto 0;
+}
+
+/* full-width sections, green or light gray */
+.band {
+  padding: 32px 0;
+}
+
+.band.green {
+  background: var(--green);
+}
+
+.band.light {
+  background: var(--light);
+}
+
+.band h2 {
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 1.8rem;
+}
+
+.band .center {
+  text-align: center;
+}
+
 .card {
-  border-bottom: 2px solid var(--line);
-  padding: 8px 0 16px;
   margin-bottom: 16px;
 }
 
+/* on the analyze page the boxes are white */
+.container.wide .card {
+  background: white;
+  padding: 16px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: Bitter, Georgia, serif;
+  font-weight: 700;
+  color: var(--dark);
+}
+
 h1 {
-  color: var(--main);
   font-size: 1.8rem;
   margin: 8px 0;
 }
 
 h2 {
-  color: var(--main);
   font-size: 1.3rem;
   margin-top: 0;
 }
 
 a {
-  color: var(--main);
+  color: var(--link);
 }
 
 .muted {
   color: var(--gray);
 }
 
+/* Red: / Yellow: / Green: labels */
+.red {
+  color: var(--danger);
+}
+
+.yellow {
+  color: var(--warning);
+}
+
+.green-text {
+  color: var(--safe);
+}
+
 .button {
   display: inline-block;
-  background: var(--main);
+  background: var(--button);
   color: white;
   border: none;
   border-radius: 4px;

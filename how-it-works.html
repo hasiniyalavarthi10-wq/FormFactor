@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FormFactor - How it works</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,21 +17,26 @@
     </div>
   </nav>
 
-  <main class="container">
+  <div class="banner">
+    <h1>How it works</h1>
+  </div>
 
-    <h1>How FormFactor works</h1>
+  <main>
 
-    <div class="card">
-      <h2>1. Finding your body</h2>
+    <section class="band green">
+      <div class="container center">
+        <h2>Finding your body</h2>
       <p>
         FormFactor uses Google's MediaPipe to find points on your body in every camera frame.
         It uses your shoulder, hip, knee, and ankle on the side closest to the camera.
         Everything runs in your browser, so your video never leaves your device.
       </p>
-    </div>
+      </div>
+    </section>
 
-    <div class="card">
-      <h2>2. What the research says</h2>
+    <section class="band light">
+      <div class="container">
+        <h2>What the research says</h2>
       <ul>
         <li>Rounding your lower back while lifting puts a lot of stress on your spinal discs. [1, 2]</li>
         <li>A little back movement is normal, about 9-22° in the lower back. [3]</li>
@@ -39,15 +45,17 @@
         <li>The real danger is your back angle changing fast in the middle of a lift. [6, 7]</li>
         <li>Comparing how much your trunk and shins lean shows if your hips or knees did more of the work. [4]</li>
       </ul>
-    </div>
+      </div>
+    </section>
 
-    <div class="card">
-      <h2>3. How it decides</h2>
+    <section class="band green">
+      <div class="container">
+        <h2>How it decides</h2>
       <ul>
-        <li><span class="dot danger"></span> <b>Red:</b> your chest drops forward really fast.</li>
-        <li><span class="dot warning"></span> <b>Yellow:</b> your hips rise before your chest, or you lean more
+        <li><b class="red">Red:</b> your chest drops forward really fast.</li>
+        <li><b class="yellow">Yellow:</b> your hips rise before your chest, or you lean more
             than 45° (squats).</li>
-        <li><span class="dot safe"></span> <b>Green:</b> none of those happened.</li>
+        <li><b class="green-text">Green:</b> none of those happened.</li>
       </ul>
       <p>
         <b>Which muscles worked more</b> uses the <b>trunk-tibia angle</b>: your trunk lean minus your shin
@@ -58,20 +66,24 @@
         <li><b>Knee bias:</b> less than -10°. Your knees and quads did more of the work.</li>
         <li><b>Neutral:</b> between -10° and +10°. Your hips and knees shared the work.</li>
       </ul>
-    </div>
+      </div>
+    </section>
 
-    <div class="card">
-      <h2>4. Limits</h2>
+    <section class="band light">
+      <div class="container">
+        <h2>Limits</h2>
       <ul>
         <li>One camera can't see the curve of your back, only a line from your shoulder to your hip.</li>
         <li>It can't measure force or how much weight you're lifting.</li>
         <li>It works best from the side, with your whole body in view and good lighting.</li>
         <li>I tested it on 3 photos from a research paper [4] and it matched all 3, but it hasn't been tested in a lab.</li>
       </ul>
-    </div>
+      </div>
+    </section>
 
-    <div class="card">
-      <h2>Sources</h2>
+    <section class="band green">
+      <div class="container">
+        <h2>Sources</h2>
       <ol>
         <li>McGill, S. <i>Low Back Disorders.</i> Human Kinetics.</li>
         <li>Myer, G. D., et al. (2014). The back squat: A proposed assessment of functional deficits and
@@ -90,7 +102,8 @@
         <li>Squat University. How to fix back pain: 7 science-backed steps.
             <a href="https://squatuniversity.com/2025/02/13/how-to-fix-back-pain-7-science-backed-steps/">Link</a></li>
       </ol>
-    </div>
+      </div>
+    </section>
 
   </main>
 
