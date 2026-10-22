@@ -31,8 +31,8 @@ FormFactor gives an *angular risk estimate based on published biomechanics resea
 | File | What it does |
 |---|---|
 | `index.html` | Landing page |
-| `analyze.html` / `analyze.js` | The tool: camera, skeleton, recording, playback, results screen |
-| `angle-math.js` | Turns joint positions into angles and angular velocity |
+| `analyzehomescreen.html` / `analyze.js` | The tool: camera, skeleton, recording, playback, results screen |
+| `anglecalculations.js` | Turns joint positions into angles and angular velocity |
 | `form-rules.js` | Thresholds and the safe / warning / danger rules |
 | `how-it-works.html` | How it works, sources, limitations |
 | `style.css` | Styles |
@@ -75,6 +75,6 @@ I used **Claude Code** (an AI coding assistant made by Anthropic) while building
   user-chosen squat depth goal instead of one fixed angle, side-by-side layout); tested the app and
   found bugs; _(add what you tune, rewrite, or change)_.
 - **What Claude Code wrote:** the HTML/CSS pages, the camera and MediaPipe code, the skeleton drawing,
-  recording and playback, the results screen, and, at my request, the code in `angle-math.js` and `form-rules.js`
+  recording and playback, the results screen, and, at my request, the code in `anglecalculations.js` and `form-rules.js`
   based on my research and design decisions.
 - **What I changed afterward:** _(fill in)_

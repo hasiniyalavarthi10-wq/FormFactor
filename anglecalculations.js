@@ -1,4 +1,4 @@
-// angle-math.js
+// anglecalculations.js
 // math for turning body points into angles
 // every point looks like { x: 120, y: 340 } in pixels
 // note: in pictures y goes DOWN as it gets bigger
