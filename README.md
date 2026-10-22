@@ -18,7 +18,7 @@ Everything runs in the browser. **The camera video never leaves your device.**
 
 FormFactor gives an *angular risk estimate based on published biomechanics research*. It is
 **not medical advice** and does not measure force or spinal flexion directly. See
-[how-it-works.html](how-it-works.html) for how it works and its limitations.
+the home page for how it works and its limitations.
 
 ## Built with
 
@@ -30,11 +30,11 @@ FormFactor gives an *angular risk estimate based on published biomechanics resea
 
 | File | What it does |
 |---|---|
-| `index.html` | Landing page |
+| `index.html` | Home page: what it is, how to use it, guide, limits |
 | `analyzehomescreen.html` / `analyze.js` | The tool: camera, skeleton, recording, playback, results screen |
 | `anglecalculations.js` | Turns joint positions into angles and angular velocity |
 | `form-rules.js` | Thresholds and the safe / warning / danger rules |
-| `how-it-works.html` | How it works, sources, limitations |
+| `how-it-works.html` | Old page, now just sends people to the home page |
 | `style.css` | Styles |
 
 ## Run it on your computer
