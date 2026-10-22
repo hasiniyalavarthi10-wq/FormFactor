@@ -1,7 +1,7 @@
 /* style.css - styles for all the pages */
 
 :root {
-  --main: #1b5e20;      /* dark green */
+  --main: #000080;      /* navy blue */
   --text: #222222;
   --gray: #666666;
   --line: #cccccc;
@@ -28,7 +28,7 @@ body {
   padding: 16px;
 }
 
-/* green bar at the top */
+/* navy bar at the top */
 nav {
   background: var(--main);
 }
