@@ -218,7 +218,7 @@ function drawLine(canvas, start, end, color, width) {
 
 // white text with a black outline so you can read it on any background
 function drawText(canvas, text, x, y, align) {
-  canvas.font = "bold " + textSize() + "px sans-serif";
+  canvas.font = "bold " + textSize() + "px Bitter, serif";
   canvas.textAlign = align;
   canvas.lineWidth = 6;
   canvas.strokeStyle = "black";

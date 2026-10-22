@@ -21,7 +21,7 @@
 
 body {
   margin: 0;
-  font-family: Lato, Arial, sans-serif;
+  font-family: Bitter, Georgia, serif;
   line-height: 1.6;
   background: var(--light);
   color: var(--text);
@@ -169,7 +169,7 @@ a {
 }
 
 .figure-caption {
-  font-family: Georgia, serif;
+  font-family: Bitter, Georgia, serif;
   font-size: 0.85rem;
   margin: 8px 16px 0;
 }
@@ -194,6 +194,7 @@ a {
   border: none;
   border-radius: 4px;
   padding: 10px 16px;
+  font-family: Bitter, Georgia, serif;
   font-size: 1rem;
   font-weight: bold;
   text-decoration: none;
@@ -212,6 +213,7 @@ label {
 }
 
 select {
+  font-family: Bitter, Georgia, serif;
   font-size: 1rem;
   max-width: 100%;
 }
