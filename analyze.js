@@ -561,6 +561,11 @@ function showResults() {
   }
   html = html + "</ul>";
 
+  // rep counter (countReps is in form-rules.js)
+  if (lift === "squat") {
+    html = html + "<h3>Reps: " + countReps(frames) + "</h3>";
+  }
+
   html = html + "<h3>Which muscles worked more?</h3>";
   if (lift === "squat") {
     // look at the deepest point of the set (where the hip is lowest, bigger y = lower)

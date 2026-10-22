@@ -120,3 +120,14 @@ function makeTips(frames, lift) {
   }
   return tips;
 }
+
+
+// counts how many reps were done
+// frames = every saved frame, each one has frames[i].kneeAngle (in degrees)
+// a rep = the knee bends past 140, then straightens past 160
+// returns the number of reps (like 5)
+function countReps(frames) {
+  // TODO: write this (see the light switch idea)
+
+  return 0;  // replace this with your count
+}
