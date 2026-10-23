@@ -34,7 +34,6 @@ the home page for how it works and its limitations.
 | `analyzehomescreen.html` / `analyze.js` | The tool: camera, skeleton, recording, playback, results screen |
 | `anglecalculations.js` | Turns joint positions into angles and angular velocity |
 | `form-rules.js` | Thresholds and the safe / warning / danger rules |
-| `how-it-works.html` | Old page, now just sends people to the home page |
 | `style.css` | Styles |
 
 ## Run it on your computer
