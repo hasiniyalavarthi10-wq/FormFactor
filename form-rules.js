@@ -122,12 +122,40 @@ function makeTips(frames, lift) {
 }
 
 
-// counts how many reps were done
-// frames = every saved frame, each one has frames[i].kneeAngle (in degrees)
-// a rep = the knee bends past 140, then straightens past 160
-// returns the number of reps (like 5)
-function countReps(frames) {
-  // TODO: write this (see the light switch idea)
+// finds every rep and gives back the frame number of the bottom of each one
+// works like a light switch:
+// knee bends past 140 = switch goes "down", knee straightens past 160 = one rep done
+function findReps(frames) {
+  let reps = [];
+  let isDown = false;
+  let bottom = 0;
 
-  return 0;  // replace this with your count
+  for (let i = 0; i < frames.length; i++) {
+    let knee = frames[i].kneeAngle;
+
+    if (isDown == false && knee < 140) {
+      isDown = true;
+      bottom = i;
+    }
+
+    if (isDown == true) {
+      // keep track of where the hip was lowest (bigger y = lower)
+      if (frames[i].hip.y > frames[bottom].hip.y) {
+        bottom = i;
+      }
+      // knee is straight again so the rep is done
+      if (knee > 160) {
+        reps.push(bottom);
+        isDown = false;
+      }
+    }
+  }
+
+  return reps;
+}
+
+
+// counts how many reps were done
+function countReps(frames) {
+  return findReps(frames).length;
 }

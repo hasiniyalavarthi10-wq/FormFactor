@@ -561,9 +561,10 @@ function showResults() {
   }
   html = html + "</ul>";
 
-  // rep counter (countReps is in form-rules.js)
+  // rep counter and how deep each rep was compared to the first one
   if (lift === "squat") {
     html = html + "<h3>Reps: " + countReps(frames) + "</h3>";
+    html = html + depthList();
   }
 
   html = html + "<h3>Which muscles worked more?</h3>";
@@ -593,4 +594,44 @@ function showResults() {
     "An estimate from your body angles, based on published research.</p>";
 
   resultsBox.innerHTML = html;
+}
+
+// list of how deep each rep was, compared to the first rep
+// depth = thigh angle at the bottom (0 = parallel, + = deeper, - = higher)
+function depthList() {
+  const reps = findReps(frames);
+  if (reps.length < 2) {
+    return "";
+  }
+
+  const first = frames[reps[0]];
+  const firstDepth = thighAngle(first.hip, first.knee);
+  let html = "<p><b>Depth compared to your first rep:</b></p><ul>";
+
+  for (let i = 0; i < reps.length; i++) {
+    const f = frames[reps[i]];
+    const depth = thighAngle(f.hip, f.knee);
+    const change = depth - firstDepth;
+
+    let words = "";
+    if (i == 0) {
+      words = "first rep";
+    } else if (Math.abs(change) < 3) {
+      words = "about the same";
+    } else if (change < 0) {
+      words = Math.round(-change) + "° shallower";
+    } else {
+      words = Math.round(change) + "° deeper";
+    }
+
+    // yellow dot if it was a lot shallower (you might be getting tired)
+    let dot = "";
+    if (change < -10) {
+      dot = "<span class='dot warning'></span> ";
+    }
+
+    html = html + "<li>" + dot + "Rep " + (i + 1) + ": " + formatAngle(depth, true) + " (" + words + ")</li>";
+  }
+
+  return html + "</ul><p class='muted'>0° = thighs level with the floor, + = deeper, - = higher.</p>";
 }
