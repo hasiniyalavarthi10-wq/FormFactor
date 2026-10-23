@@ -561,9 +561,8 @@ function showResults() {
   }
   html = html + "</ul>";
 
-  // rep counter and how deep each rep was compared to the first one
+  // how deep each rep was compared to the first one
   if (lift === "squat") {
-    html = html + "<h3>Reps: " + countReps(frames) + "</h3>";
     html = html + depthList();
   }
 

@@ -154,8 +154,3 @@ function findReps(frames) {
   return reps;
 }
 
-
-// counts how many reps were done
-function countReps(frames) {
-  return findReps(frames).length;
-}
