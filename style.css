@@ -1,11 +1,8 @@
-/* style.css - styles for all the pages */
-/* colors and fonts match our Google Site */
-
 :root {
-  --green: #80bd8c;     /* sage green sections */
-  --light: #f2f2f2;     /* light gray sections */
-  --dark: #212121;      /* top bar and headings */
-  --button: #000000;    /* black buttons */
+  --green: #80bd8c;
+  --light: #f2f2f2;
+  --dark: #212121;
+  --button: #000000;
   --link: #1e6c93;
   --text-color: #212121;
   --gray: #555555;
@@ -14,13 +11,12 @@
   --warning: #f1c232;
   --danger: #ff0000;
 
-  /* text sizes (only use these) */
-  --title: 4rem;        /* big FormFactor title */
-  --page-title: 2rem;   /* "Analyze your lift", "Results" */
-  --heading: 1.6rem;    /* section headings */
+  --title: 4rem;
+  --page-title: 2rem;
+  --heading: 1.6rem;
   --small-heading: 1.25rem;
-  --text: 1.1rem;       /* all normal text */
-  --small: 0.9rem;      /* captions, footer */
+  --text: 1.1rem;
+  --small: 0.9rem;
 }
 
 * {
@@ -42,7 +38,6 @@ body {
   padding: 16px;
 }
 
-/* dark bar at the top */
 nav {
   background: var(--dark);
 }
@@ -64,7 +59,6 @@ nav .logo {
   margin-right: auto;
 }
 
-/* big green banner with the title */
 .banner {
   background: var(--green);
   text-align: center;
@@ -82,7 +76,6 @@ nav .logo {
   margin: 12px auto 0;
 }
 
-/* full-width sections, green or light gray */
 .band {
   padding: 32px 0;
 }
@@ -109,7 +102,6 @@ nav .logo {
   margin-bottom: 16px;
 }
 
-/* on the analyze page the boxes are white */
 .container.wide .card {
   background: white;
   padding: 16px;
@@ -145,7 +137,6 @@ a {
   color: var(--gray);
 }
 
-/* text on the left, picture on the right (stacks on phones) */
 .two-columns {
   display: grid;
   gap: 32px;
@@ -169,7 +160,6 @@ a {
   margin-bottom: 14px;
 }
 
-/* cream box around the research picture */
 .figure-box {
   background: #fffcf0;
   padding: 0 0 12px;
@@ -186,7 +176,6 @@ a {
   margin: 8px 16px 0;
 }
 
-/* Red: / Yellow: / Green: labels */
 .red {
   color: var(--danger);
 }
@@ -230,31 +219,26 @@ select {
   max-width: 100%;
 }
 
-/* the analyze page is wider so 2 columns fit */
 .container.wide {
   max-width: 1200px;
 }
 
-/* phones: everything in 1 column */
 .app-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
-/* computers: 2 columns */
 @media (min-width: 800px) {
   .app-layout {
     grid-template-columns: 1fr auto;
     align-items: start;
   }
 
-  /* results page: video on the left, results on the right */
   .app-layout.results-layout {
     grid-template-columns: auto 1fr;
   }
 
-  /* keeps the camera on screen when you scroll */
   .app-layout .sticky {
     position: sticky;
     top: 16px;
@@ -270,7 +254,6 @@ select {
   }
 }
 
-/* tall black box for the camera (3 wide, 4 tall) */
 .video-box {
   position: relative;
   width: 100%;
@@ -281,7 +264,6 @@ select {
   overflow: hidden;
 }
 
-/* video and drawing on top of each other, cropped the same way so the lines match the body */
 .video-box video,
 .video-box canvas {
   position: absolute;
@@ -292,7 +274,6 @@ select {
   object-fit: cover;
 }
 
-/* green / yellow / red result box */
 .overall {
   color: white;
   font-weight: bold;
@@ -317,7 +298,6 @@ select {
   margin-bottom: 8px;
 }
 
-/* results slide in from the right */
 .slide-in {
   animation: slide-in 0.5s;
 }
@@ -340,7 +320,6 @@ select {
   justify-content: center;
 }
 
-/* little colored circles */
 .dot {
   display: inline-block;
   width: 12px;
@@ -360,7 +339,6 @@ select {
   background: var(--danger);
 }
 
-/* big countdown number on the video */
 .countdown {
   position: absolute;
   top: 50%;
@@ -388,7 +366,6 @@ footer {
   padding: 24px 16px;
 }
 
-/* stops the sliding results from making phones scroll sideways */
 main {
   overflow-x: clip;
 }

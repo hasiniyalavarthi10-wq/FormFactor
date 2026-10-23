@@ -18,7 +18,6 @@
 
   <main class="container wide">
 
-    <!-- recording screen -->
     <div class="app-layout" id="record-view">
 
       <div>
@@ -34,7 +33,6 @@
             <option value="deadlift">Deadlift</option>
           </select>
 
-          <!-- only for squats -->
           <div id="depth-choice">
             <label for="depth-goal">Depth goal (live feedback)</label>
             <select id="depth-goal">
@@ -65,17 +63,14 @@
         </div>
       </div>
 
-      <!-- camera -->
       <div class="video-box sticky">
         <video id="video" playsinline muted></video>
-        <!-- the lines get drawn on this, on top of the video -->
         <canvas id="overlay"></canvas>
         <div class="countdown" id="countdown"></div>
       </div>
 
     </div>
 
-    <!-- results screen (shows up after you click Analyze) -->
     <div class="app-layout results-layout hidden" id="results-view">
 
       <div class="sticky">
@@ -103,10 +98,8 @@
     FormFactor | Congressional App Challenge
   </footer>
 
-  <!-- these 2 have to load first because analyze.js uses them -->
   <script src="anglecalculations.js"></script>
   <script src="form-rules.js"></script>
-  <!-- "module" so it can import MediaPipe -->
   <script type="module" src="analyze.js"></script>
 </body>
 </html>

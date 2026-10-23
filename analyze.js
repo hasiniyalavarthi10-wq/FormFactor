@@ -1,33 +1,25 @@
-// analyze.js
-// everything on the analyze page (camera, lines, recording, playback, results)
-
-// MediaPipe finds the body points for us
 import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
 
 const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
 const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
 
-const COUNTDOWN = 5;     // seconds before recording starts
-const MAX_TIME = 300;    // stop recording after 5 minutes so the browser doesn't run out of memory
-const CUT_END = 2;       // seconds cut off the end (that's you walking over to click Stop)
+const COUNTDOWN = 5;
+const MAX_TIME = 300;
+const CUT_END = 2;
 
-// MediaPipe numbers 33 body points. these are the ones we use for each side
 const LEFT = { shoulder: 11, hip: 23, knee: 25, ankle: 27 };
 const RIGHT = { shoulder: 12, hip: 24, knee: 26, ankle: 28 };
 
-// pairs of points to connect for the thin white full-body skeleton
 const BODY_LINES = [
-  [11, 12], [23, 24],                       // shoulders, hips
-  [11, 13], [13, 15], [12, 14], [14, 16],   // arms
-  [11, 23], [23, 25], [25, 27],             // left side
-  [12, 24], [24, 26], [26, 28]              // right side
+  [11, 12], [23, 24],
+  [11, 13], [13, 15], [12, 14], [14, 16],
+  [11, 23], [23, 25], [25, 27],
+  [12, 24], [24, 26], [26, 28]
 ];
 
-// line colors
 const COLORS = { safe: "#00c853", warning: "#ffd600", danger: "#ff1744" };
 const BLUE = "#00e5ff";
 
-// words for the results
 const OVERALL_TEXT = {
   safe: "Good form",
   warning: "Pretty good, a few things to watch",
@@ -41,7 +33,6 @@ const BIAS_TEXT = {
   "knee-biased": "<b>Your knees did more of the work.</b> Your shins leaned forward more than your chest, so your quads (front of thighs) worked harder."
 };
 
-// grab everything we need from the page
 const startCameraButton = document.getElementById("start-camera-button");
 const liftSelect = document.getElementById("lift-type");
 const depthChoice = document.getElementById("depth-choice");
@@ -64,7 +55,6 @@ const recordAgainButton = document.getElementById("record-again-button");
 const playbackStatus = document.getElementById("playback-status");
 const resultsBox = document.getElementById("results");
 
-// stuff we need to remember
 let poseLandmarker = null;
 let lastVideoTime = -1;
 let countdownTimer = null;
@@ -73,9 +63,9 @@ let maxTimer = null;
 let playbackTimer = null;
 let isRecording = false;
 let startTime = 0;
-let frames = [];       // everything we saved while recording, one item per frame
-let worstIndex = -1;   // frame number of the worst moment (-1 means there wasn't one)
-let liveTrunk = [];    // last few live angles, used to stop the numbers from flickering
+let frames = [];
+let worstIndex = -1;
+let liveTrunk = [];
 let liveShin = [];
 let liveDepth = [];
 
@@ -88,12 +78,10 @@ worstButton.addEventListener("click", showWorstFrame);
 recordAgainButton.addEventListener("click", backToRecording);
 liftSelect.addEventListener("change", showDepthChoice);
 
-
 function showStatus(message) {
   statusText.textContent = message;
 }
 
-// only show the depth goal dropdown for squats
 function showDepthChoice() {
   if (liftSelect.value === "squat") {
     depthChoice.classList.remove("hidden");
@@ -102,14 +90,10 @@ function showDepthChoice() {
   }
 }
 
-// shows the big countdown number on the video ("" makes it disappear)
 function showCountdown(text) {
   countdownText.textContent = text;
 }
 
-
-
-// turn on the camera, load MediaPipe, then start the loop
 async function startCamera() {
   try {
     showStatus("Turning on camera...");
@@ -124,7 +108,6 @@ async function startCamera() {
     return;
   }
 
-  // make the drawing layers the same size as the camera picture
   overlay.width = video.videoWidth;
   overlay.height = video.videoHeight;
   playback.width = video.videoWidth;
@@ -144,10 +127,7 @@ async function startCamera() {
   requestAnimationFrame(loop);
 }
 
-
-// runs over and over: find the body, draw it, and save it if we're recording
 function loop() {
-  // only do this when the camera has a new picture
   if (video.currentTime !== lastVideoTime) {
     lastVideoTime = video.currentTime;
     const now = performance.now();
@@ -168,7 +148,6 @@ function loop() {
         drawDepthBar(smoothLive(liveDepth, thighAngle(joints.hip, joints.knee)));
       }
 
-      // only save frames where the body is clearly visible
       if (isRecording && joints.visible) {
         saveFrame(joints, now);
       }
@@ -177,8 +156,6 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
-
-// picks the side of the body the camera can see better and gets its 4 joints in pixels
 function getJoints(points) {
   const leftScore = points[11].visibility + points[23].visibility + points[25].visibility + points[27].visibility;
   const rightScore = points[12].visibility + points[24].visibility + points[26].visibility + points[28].visibility;
@@ -193,19 +170,13 @@ function getJoints(points) {
     hip: toPixels(points[side.hip]),
     knee: toPixels(points[side.knee]),
     ankle: toPixels(points[side.ankle]),
-    // visible = MediaPipe is pretty sure about all 4 points (each one is 0 to 1)
     visible: Math.max(leftScore, rightScore) > 2.8
   };
 }
 
-
-// MediaPipe gives x and y from 0 to 1, so change them into pixels
-// (if you skip this the angles are wrong since the picture is wider than it is tall)
 function toPixels(point) {
   return { x: point.x * video.videoWidth, y: point.y * video.videoHeight };
 }
-
-
 
 function drawLine(canvas, start, end, color, width) {
   canvas.strokeStyle = color;
@@ -216,7 +187,6 @@ function drawLine(canvas, start, end, color, width) {
   canvas.stroke();
 }
 
-// white text with a black outline so you can read it on any background
 function drawText(canvas, text, x, y, align) {
   canvas.font = "bold " + textSize() + "px Bitter, serif";
   canvas.textAlign = align;
@@ -227,19 +197,16 @@ function drawText(canvas, text, x, y, align) {
   canvas.fillText(text, x, y);
 }
 
-// a see-through bar across the picture with text in the middle
 function drawBar(canvas, text, y, height, color) {
   canvas.fillStyle = color;
   canvas.fillRect(0, y, canvas.canvas.width, height);
   drawText(canvas, text, canvas.canvas.width / 2, y + height * 0.7, "center");
 }
 
-// bigger camera picture = bigger text
 function textSize() {
   return Math.round(video.videoHeight / 22);
 }
 
-// thin white skeleton for the whole body (just for looks)
 function drawBody(points) {
   for (let i = 0; i < BODY_LINES.length; i++) {
     const start = toPixels(points[BODY_LINES[i][0]]);
@@ -248,19 +215,16 @@ function drawBody(points) {
   }
 }
 
-// draws the trunk and shin lines like the picture in the Straub & Powers paper
 function drawAngles(canvas, joints, trunk, shin, color) {
   drawLine(canvas, joints.hip, joints.knee, color, 4);
   drawLine(canvas, joints.hip, joints.shoulder, color, 8);
   drawLine(canvas, joints.ankle, joints.knee, color, 8);
 
-  // straight up lines
   const aboveHip = { x: joints.hip.x, y: joints.shoulder.y };
   const aboveAnkle = { x: joints.ankle.x, y: joints.knee.y };
   drawLine(canvas, joints.hip, aboveHip, "white", 4);
   drawLine(canvas, joints.ankle, aboveAnkle, "white", 4);
 
-  // put the numbers on the opposite side from where the body is leaning
   const size = textSize();
   if (joints.shoulder.x > joints.hip.x) {
     drawText(canvas, formatAngle(trunk, false), aboveHip.x - 12, aboveHip.y + size, "right");
@@ -273,7 +237,6 @@ function drawAngles(canvas, joints, trunk, shin, color) {
     drawText(canvas, formatAngle(shin, false), aboveAnkle.x + 12, aboveAnkle.y + size, "left");
   }
 
-  // bottom bar
   let text = "Trunk - Shin = " + formatAngle(trunk - shin, true);
   if (liftSelect.value === "squat") {
     text = text + "  " + BIAS_NAME[getBias(trunk - shin)];
@@ -281,7 +244,6 @@ function drawAngles(canvas, joints, trunk, shin, color) {
   drawBar(canvas, text, canvas.canvas.height - size * 1.8, size * 1.8, "rgba(0,0,0,0.6)");
 }
 
-// bar at the top of the live camera that turns green when you hit your depth goal
 function drawDepthBar(depth) {
   let goal = LIMITS.parallel;
   let goalName = "Parallel";
@@ -298,7 +260,6 @@ function drawDepthBar(depth) {
   }
 }
 
-// turns an angle into text like "42°" (or "+12°" if plus is true)
 function formatAngle(angle, plus) {
   if (isNaN(angle)) {
     return "--";
@@ -309,7 +270,6 @@ function formatAngle(angle, plus) {
   return Math.round(angle) + "°";
 }
 
-// averages the last 5 live angles so the numbers don't jump around
 function smoothLive(list, angle) {
   list.push(angle);
   if (list.length > 5) {
@@ -322,9 +282,6 @@ function smoothLive(list, angle) {
   return total / list.length;
 }
 
-
-
-// saves the time, the 4 joints, and a small picture for the playback
 function saveFrame(joints, now) {
   const small = document.createElement("canvas");
   small.width = 360;
@@ -344,7 +301,6 @@ function saveFrame(joints, now) {
   });
 }
 
-// "Start set": count down from 5, then start recording
 function startSet() {
   startSetButton.disabled = true;
   stopSetButton.disabled = false;
@@ -372,17 +328,14 @@ function startRecording() {
   startTime = performance.now();
   showStatus("Recording 0:00. Lift now! Click Stop when you're done.");
 
-  // update the timer every second
   clockTimer = setInterval(function () {
     const seconds = (performance.now() - startTime) / 1000;
     showStatus("Recording " + formatTime(seconds) + ". Click Stop when you're done.");
   }, 1000);
 
-  // stop by itself after 5 minutes
   maxTimer = setTimeout(stopSet, MAX_TIME * 1000);
 }
 
-// "Stop" (or the 5 minutes ran out)
 function stopSet() {
   clearInterval(countdownTimer);
   clearInterval(clockTimer);
@@ -397,7 +350,6 @@ function stopSet() {
   }
   isRecording = false;
 
-  // cut off the last 2 seconds (walking over to the laptop)
   if (frames.length > 0) {
     const cutTime = frames[frames.length - 1].time - CUT_END;
     while (frames.length > 0 && frames[frames.length - 1].time > cutTime) {
@@ -414,13 +366,9 @@ function stopSet() {
   showStatus("Set recorded (" + formatTime(frames[frames.length - 1].time) + "). Click Analyze to see your results.");
 }
 
-
-
-// works out the angles, speeds, and levels for every frame
 function analyzeSet() {
   const lift = liftSelect.value;
 
-  // 1. angles for every frame
   for (let i = 0; i < frames.length; i++) {
     const f = frames[i];
     f.rawKnee = calculateAngle(f.hip, f.knee, f.ankle);
@@ -429,7 +377,6 @@ function analyzeSet() {
     f.rawShin = leanAngle(f.knee, f.ankle);
   }
 
-  // 2. smooth them out so one wobbly dot doesn't mess things up
   for (let i = 0; i < frames.length; i++) {
     frames[i].kneeAngle = smooth(i, "rawKnee");
     frames[i].hipAngle = smooth(i, "rawHip");
@@ -437,7 +384,6 @@ function analyzeSet() {
     frames[i].shinAngle = smooth(i, "rawShin");
   }
 
-  // 3. speeds (compared to 6 frames ago, about 0.2 seconds) and the level for each frame
   for (let i = 0; i < frames.length; i++) {
     const f = frames[i];
     const before = frames[Math.max(0, i - 6)];
@@ -448,8 +394,6 @@ function analyzeSet() {
   }
 }
 
-// average of an angle with the 3 frames before and after it
-// (frames[j][name] means frames[j].rawKnee, frames[j].rawHip, etc.)
 function smooth(i, name) {
   let total = 0;
   let count = 0;
@@ -462,9 +406,6 @@ function smooth(i, name) {
   return total / count;
 }
 
-
-
-// "Analyze": do the math, switch screens, and play it back
 function openResults() {
   analyzeSet();
   recordView.classList.add("hidden");
@@ -474,7 +415,6 @@ function openResults() {
   replay();
 }
 
-// "Record another set": go back to the camera screen
 function backToRecording() {
   clearTimeout(playbackTimer);
   resultsView.classList.add("hidden");
@@ -488,7 +428,6 @@ function replay() {
   playFrame(0);
 }
 
-// shows one frame, then waits until it's time for the next one
 function playFrame(i) {
   drawPlaybackFrame(frames[i]);
   playbackStatus.textContent = "Playback: " + formatTime(frames[i].time);
@@ -503,7 +442,6 @@ function playFrame(i) {
   }
 }
 
-// one saved frame: the picture, the colored lines, and the angles
 function drawPlaybackFrame(f) {
   playbackDraw.drawImage(f.picture, 0, 0, playback.width, playback.height);
   drawAngles(playbackDraw, f, f.trunkLean, f.shinAngle, COLORS[f.level]);
@@ -520,11 +458,9 @@ function showWorstFrame() {
   playbackStatus.textContent = "Worst moment, at " + formatTime(frames[worstIndex].time) + ". Click Replay to watch it all again.";
 }
 
-// fills in the results on the right side
 function showResults() {
   const lift = liftSelect.value;
 
-  // the worst level in the whole set = the lower back result
   let back = "safe";
   for (let i = 0; i < frames.length; i++) {
     if (frames[i].level === "danger") {
@@ -534,7 +470,6 @@ function showResults() {
     }
   }
 
-  // worst moment = the flagged frame where the chest moved fastest
   worstIndex = -1;
   for (let i = 0; i < frames.length; i++) {
     if (frames[i].level !== "safe") {
@@ -551,7 +486,6 @@ function showResults() {
     worstButton.textContent = "Show worst moment (" + formatTime(frames[worstIndex].time) + ")";
   }
 
-  // build the html
   let html = "<div class='overall " + back + "'>" + OVERALL_TEXT[back] + "</div>";
 
   const tips = makeTips(frames, lift);
@@ -561,14 +495,12 @@ function showResults() {
   }
   html = html + "</ul>";
 
-  // how deep each rep was compared to the first one
   if (lift === "squat") {
     html = html + depthList();
   }
 
   html = html + "<h3>Which muscles worked more?</h3>";
   if (lift === "squat") {
-    // look at the deepest point of the set (where the hip is lowest, bigger y = lower)
     let deepest = 0;
     for (let i = 0; i < frames.length; i++) {
       if (frames[i].hip.y > frames[deepest].hip.y) {
@@ -595,8 +527,6 @@ function showResults() {
   resultsBox.innerHTML = html;
 }
 
-// list of how deep each rep was, compared to the first rep
-// depth = thigh angle at the bottom (0 = parallel, + = deeper, - = higher)
 function depthList() {
   const reps = findReps(frames);
   if (reps.length < 2) {
@@ -623,7 +553,6 @@ function depthList() {
       words = Math.round(change) + "° deeper";
     }
 
-    // yellow dot if it was a lot shallower (you might be getting tired)
     let dot = "";
     if (change < -10) {
       dot = "<span class='dot warning'></span> ";
