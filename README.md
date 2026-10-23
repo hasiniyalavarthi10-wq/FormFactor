@@ -30,7 +30,7 @@ the home page for how it works and its limitations.
 
 | File | What it does |
 |---|---|
-| `index.html` | Home page: what it is, how to use it, guide, limits |
+| `pagesetup.html` | Home page: what it is, how to use it, guide, limits |
 | `analyzehomescreen.html` / `analyze.js` | The tool: camera, skeleton, recording, playback, results screen |
 | `anglecalculations.js` | Turns joint positions into angles and angular velocity |
 | `form-rules.js` | Thresholds and the safe / warning / danger rules |
@@ -45,7 +45,7 @@ The camera and MediaPipe only work when the page is served from a web server
 python -m http.server 8000
 ```
 
-Then open <http://localhost:8000> in Chrome or Edge. (Python is only used as a local test
+Then open <http://localhost:8000/pagesetup.html> in Chrome or Edge. (Python is only used as a local test
 server. It is not part of the app.)
 
 ## Put it online with GitHub Pages
@@ -58,7 +58,7 @@ server. It is not part of the app.)
    ```
 3. On GitHub, open the repository → **Settings** → **Pages**.
 4. Under **Build and deployment**, set **Source** to **Deploy from a branch**, choose **main** and **/ (root)**, then **Save**.
-5. Wait 1–2 minutes. Your site will be at `https://YOUR-USERNAME.github.io/FormFactor/`.
+5. Wait 1–2 minutes. Your site will be at `https://YOUR-USERNAME.github.io/FormFactor/pagesetup.html`.
 
 GitHub Pages uses https, so the camera works there.
 
